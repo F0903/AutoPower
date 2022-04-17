@@ -13,3 +13,6 @@ From here you can locate "AutoPower", and start it. Alternatively, you can also 
 
 If you ever want to uninstall, simply open your terminal again (with admin perms!), and type ```sc delete AutoPower```. 
 That should mark it for deletion, and it will be gone after a restart. (then you can delete the executeable)
+
+Note:
+This program has only been tested with Windows 11, but should work down to Windows 7.
