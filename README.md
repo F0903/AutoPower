@@ -1,3 +1,5 @@
+# AutoPower
+
 A small and efficient Windows service that automatically sets your laptops Power Mode to High Performance when you plug it into the wall.
 Then when you plug it out, it will automatically set your laptop back to Balanced.
 
