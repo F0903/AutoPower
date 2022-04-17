@@ -1,5 +1,11 @@
 #include <Windows.h>
-#include <fstream>
+
+#ifdef NDEBUG
+#undef DEBUG
+#else
+#define DEBUG
+#endif // NDEBUG
+
 
 constexpr auto SERVICE_NAME = L"AutoPower";
 
@@ -10,14 +16,19 @@ HANDLE serviceStopEvent = INVALID_HANDLE_VALUE;
 typedef DWORD(*PowerSetActiveSchemeFunc)(HKEY UserRootPowerKey /*ignore*/, const GUID* SchemeGuid);
 PowerSetActiveSchemeFunc PowerSetActiveScheme;
 
+
 inline void DebugString(const wchar_t* msg) {
-	OutputDebugString(msg);
+#ifdef DEBUG
+	DebugString(msg);
+#endif // DEBUG
 }
 
 template<class... Format>
 inline void FDebugString(wchar_t* msg, Format...args) {
+#ifdef DEBUG
 	wsprintf(msg, args...);
 	DebugString(msg);
+#endif // DEBUG
 }
 
 inline void SetServiceStatusAndCheck(SERVICE_STATUS_HANDLE handle, SERVICE_STATUS* status) {
@@ -85,15 +96,6 @@ void HandleStop() {
 	SetEvent(serviceStopEvent);
 }
 
-std::wstring GetServiceDirectory(int bufSize = 128) {
-	auto pathBuf = new wchar_t[bufSize];
-	GetModuleFileName(NULL, pathBuf, bufSize);
-	auto path = std::wstring(pathBuf);
-	const auto seperator = path.rfind(L'\\');
-	path.erase(seperator + 1);
-	return path;
-}
-
 DWORD WINAPI ServiceCtrlHandler(DWORD ctrl, DWORD eventType, LPVOID eventData, LPVOID _context) {
 	switch (ctrl)
 	{
@@ -111,9 +113,7 @@ DWORD WINAPI ServiceCtrlHandler(DWORD ctrl, DWORD eventType, LPVOID eventData, L
 	return NO_ERROR;
 }
 
-VOID WINAPI ServiceMain(DWORD arc, LPSTR* argv) {
-	DWORD Status = E_FAIL;
-
+inline void Startup() {
 	statusHandle = RegisterServiceCtrlHandlerEx(SERVICE_NAME, ServiceCtrlHandler, NULL);
 	if (statusHandle == NULL) {
 		return;
@@ -134,7 +134,7 @@ VOID WINAPI ServiceMain(DWORD arc, LPSTR* argv) {
 			.dwWin32ExitCode = GetLastError(),
 			.dwCheckPoint = 1,
 			});
-		return;
+		throw;
 	}
 
 	SetStatus({
@@ -142,7 +142,27 @@ VOID WINAPI ServiceMain(DWORD arc, LPSTR* argv) {
 		.dwControlsAccepted = SERVICE_ACCEPT_STOP | SERVICE_ACCEPT_POWEREVENT,
 		.dwCheckPoint = 0
 		});
+}
 
+inline void Cleanup() {
+	if (serviceStopEvent != NULL) CloseHandle(serviceStopEvent);
+
+	SetStatus({
+		.dwCurrentState = SERVICE_STOPPED,
+		.dwControlsAccepted = 0,
+		.dwWin32ExitCode = 0,
+		.dwCheckPoint = 3,
+		});
+}
+
+inline void WaitForExit() {
+	WaitForSingleObject(serviceStopEvent, INFINITE);
+	Cleanup();
+}
+
+VOID WINAPI ServiceMain(DWORD arc, LPSTR* argv) { 
+	Startup();
+	
 	if (RegisterPowerSettingNotification(statusHandle, &GUID_ACDC_POWER_SOURCE, 1) == NULL)
 		throw;
 
@@ -152,17 +172,7 @@ VOID WINAPI ServiceMain(DWORD arc, LPSTR* argv) {
 
 	PowerSetActiveScheme = (PowerSetActiveSchemeFunc)GetProcAddress(powerLib, "PowerSetActiveScheme");
 
-	WaitForSingleObject(serviceStopEvent, INFINITE);
-
-	//Cleanup
-	if (serviceStopEvent != NULL) CloseHandle(serviceStopEvent);
-
-	SetStatus({
-		.dwCurrentState = SERVICE_STOPPED,
-		.dwControlsAccepted = 0,
-		.dwWin32ExitCode = 0,
-		.dwCheckPoint = 3,
-		});
+	WaitForExit();
 }
 
 int wmain(int argc, TCHAR* arcv[]) {
