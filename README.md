@@ -5,14 +5,16 @@ Then when you plug it out, it will automatically set your laptop back to Balance
 
 Uses virtually no CPU, as code only runs when you plug your laptop in or out of power. It also allocates minimal memory, so you don't need to worry about any performance impact when the service is running.
 
-To install, you will have to compile the program yourself (for now), then move the compiled .exe into your desired directory and remember the path.
-Then open your terminal of choice (with admin perms), and type in the following: ```sc create "AutoPower" binPath="*your path to the .exe*"```
-After that it should be successfully created. 
-Now you can type "Services" in the Windows search bar, and you should be able to open the Service Manager.
-From here you can locate "AutoPower", and start it. Alternatively, you can also go into its properties, and set it to start with Windows (recommended ;).
+## Installation
 
-If you ever want to uninstall, simply open your terminal again (with admin perms!), and type ```sc delete AutoPower```. 
-That should mark it for deletion, and it will be gone after a restart. (then you can delete the executeable)
+Simply clone the project and build. Afterwards, copy the release output folder to your desired location, then simply run the install_service script, and everything should work!
+Note that a manual start is not required again after this, as it will now automatically start with your PC.
 
-Note:
-This program has only been tested with Windows 11, but should work down to Windows 7.
+## Uninstallation
+
+Open the folder where you placed the service, here you should have saved the provided scripts from the Install step.
+Then just run the uninstall_service script. Note that a restart might be required to completely remove it. 
+Afterwards you can delete the folder.
+
+__Note:__
+__This program has only been tested with Windows 11 and 10, but should work down to Windows 7.__

@@ -19,4 +19,8 @@
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>
+  <ItemGroup>
+    <CopyFileToFolders Include="uninstall_service .ps1" />
+    <CopyFileToFolders Include="install_service.ps1" />
+  </ItemGroup>
 </Project>
