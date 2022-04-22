@@ -16,5 +16,7 @@ Open the folder where you placed the service, here you should have saved the pro
 Then just run the uninstall_service script. Note that a restart might be required to completely remove it. 
 Afterwards you can delete the folder.
 
+If you did not save the installation scripts, open a PowerShell session with Admin rights. Then just type ``sc.exe delete AutoPower`` and follow as above.
+
 __Note:__
 __This program has only been tested with Windows 11 and 10, but should work down to Windows 7.__
