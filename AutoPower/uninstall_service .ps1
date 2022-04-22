@@ -8,6 +8,7 @@ if (-not $IsAdmin) {
 }
 
 $ServiceName = 'AutoPower'
+sc.exe stop $ServiceName
 sc.exe delete $ServiceName
 Write-Output "`r`n$($ServiceName) has now been deleted. In some cases it is neccessary to restart your PC to complete the removal. Afterwards you can delete this directory.`r`n"
 Pause
