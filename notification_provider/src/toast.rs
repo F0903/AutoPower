@@ -1,7 +1,7 @@
+use autopower_shared::util::to_h_string;
 use windows::{
     core::HSTRING,
     h,
-    Foundation::TypedEventHandler,
     UI::Notifications::{ToastNotification, ToastNotificationManager, ToastTemplateType},
 };
 
@@ -19,15 +19,11 @@ impl<'a> Toast<'a> {
 
     fn create_notifcation(&self) -> Result<ToastNotification> {
         let toast_xml =
-            ToastNotificationManager::GetTemplateContent(ToastTemplateType::ToastText02)?;
+            ToastNotificationManager::GetTemplateContent(ToastTemplateType::ToastText01)?;
 
         let string_elems = toast_xml.GetElementsByTagName(h!("text"))?;
 
-        string_elems
-            .Item(0)?
-            .AppendChild(&toast_xml.CreateTextNode(&HSTRING::from(self.title))?)?;
-
-        for i in 1..string_elems.Length()? {
+        for i in 0..string_elems.Length()? {
             let elem = string_elems.Item(i)?;
             elem.AppendChild(&toast_xml.CreateTextNode(&HSTRING::from(self.description))?)?;
         }
@@ -38,8 +34,9 @@ impl<'a> Toast<'a> {
 
     pub fn send(&self) -> Result<()> {
         let toast = self.create_notifcation()?;
-        toast.Activated(&TypedEventHandler::new(|_, _| Ok(())))?;
-        ToastNotificationManager::CreateToastNotifier()?.Show(&toast)?;
+        let title = to_h_string(self.title)?;
+        let notifier = ToastNotificationManager::CreateToastNotifierWithId(&title)?;
+        notifier.Show(&toast)?;
         Ok(())
     }
 }

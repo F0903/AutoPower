@@ -1,6 +1,6 @@
 use std::io::Write;
 
-use windows::core::{PCWSTR, PWSTR};
+use windows::core::{HSTRING, PCWSTR, PWSTR};
 
 type Result<T> = std::result::Result<T, Box<dyn std::error::Error>>;
 
@@ -39,14 +39,24 @@ pub fn output_debug(input: &str) -> Result<()> {
     Ok(())
 }
 
-pub fn to_win32_wstr(input: &str) -> Win32StrPtr<u16> {
-    let mut data = input
+fn get_nullterminated_utf16_from_utf8(input: &str) -> Vec<u16> {
+    input
         .encode_utf16()
         .chain(std::iter::once(0))
-        .collect::<Vec<_>>();
+        .collect::<Vec<_>>()
+}
+
+pub fn to_win32_wstr(input: &str) -> Win32StrPtr<u16> {
+    let mut data = get_nullterminated_utf16_from_utf8(input);
     let len = input.len();
     Win32StrPtr {
         str_ptr: PWSTR(data[..len].as_mut_ptr()),
         data,
     }
+}
+
+pub fn to_h_string(input: &str) -> Result<HSTRING> {
+    let data = get_nullterminated_utf16_from_utf8(input);
+    let str = HSTRING::from_wide(&data)?;
+    Ok(str)
 }

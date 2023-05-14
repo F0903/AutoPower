@@ -1,9 +1,7 @@
-#![windows_subsystem = "windows"]
-
 mod toast;
 
 use autopower_shared::{notifications::NotificationCommand, util::output_debug};
-use std::io::Read;
+use std::io::{BufRead, StdinLock};
 use toast::Toast;
 
 type Result<T> = std::result::Result<T, Box<dyn std::error::Error>>;
@@ -26,15 +24,20 @@ fn execute_command(command: NotificationCommand) -> Result<()> {
     }
 }
 
+fn read_notification_command(mut input: StdinLock) -> Result<NotificationCommand> {
+    let mut buf = String::new();
+    input.read_line(&mut buf)?;
+    let object = serde_json::from_str::<NotificationCommand>(unsafe {
+        std::str::from_utf8_unchecked(buf.as_bytes())
+    })?;
+    Ok(object)
+}
+
 fn wait_for_input() -> Result<()> {
-    let mut buf = Vec::with_capacity(128);
     loop {
-        let mut stdin = std::io::stdin();
-        let count = stdin.read_to_end(&mut buf)?;
-        let value = std::str::from_utf8(&buf[..count])?;
-        let command = serde_json::from_str::<NotificationCommand>(value)?;
+        let stdin = std::io::stdin();
+        let command = read_notification_command(stdin.lock())?;
         execute_command(command)?;
-        buf.clear();
     }
 }
 
