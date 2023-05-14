@@ -72,18 +72,18 @@ impl NotificationProvider {
             return Err("Was not able to get session id!".into());
         }
 
-        let token_handle: *mut HANDLE = std::ptr::null_mut();
-        let result = unsafe { WTSQueryUserToken(session_id, token_handle) };
+        let mut token_handle = HANDLE::default();
+        let result = unsafe { WTSQueryUserToken(session_id, &mut token_handle) };
         if !result.as_bool() {
             output_debug("Was not able to query user token!").ok();
             return Err("Was not able to query user token!".into());
         }
 
         let mut environment = std::ptr::null_mut();
-        let result = unsafe { CreateEnvironmentBlock(&mut environment, *token_handle, TRUE) };
+        let result = unsafe { CreateEnvironmentBlock(&mut environment, token_handle, TRUE) };
         if !result.as_bool() {
             unsafe {
-                CloseHandle(*token_handle);
+                CloseHandle(token_handle);
             }
         }
 
@@ -106,7 +106,7 @@ impl NotificationProvider {
         let mut proc_info = PROCESS_INFORMATION::default();
         let result = unsafe {
             CreateProcessAsUserW(
-                *token_handle,
+                token_handle,
                 to_cw_str(NOTIFICATION_PROVIDER_PATH),
                 to_w_str(""),
                 None,
@@ -122,7 +122,7 @@ impl NotificationProvider {
 
         unsafe {
             DestroyEnvironmentBlock(environment);
-            CloseHandle(*token_handle);
+            CloseHandle(token_handle);
         }
 
         if !result.as_bool() {
