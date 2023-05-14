@@ -1,6 +1,8 @@
+#![windows_subsystem = "windows"]
+
 mod toast;
 
-use autopower_shared::notifications::NotificationCommand;
+use autopower_shared::{notifications::NotificationCommand, util::output_debug};
 use std::io::Read;
 use toast::Toast;
 
@@ -37,5 +39,11 @@ fn wait_for_input() -> Result<()> {
 }
 
 fn main() -> Result<()> {
-    wait_for_input()
+    match wait_for_input() {
+        Ok(_) => (),
+        Err(e) => {
+            output_debug(&format!("notification_provider error!\n{}", e))?;
+        }
+    }
+    Ok(())
 }

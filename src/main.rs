@@ -1,7 +1,7 @@
 #[cfg(feature = "notification")]
 mod notifications;
 
-use autopower_shared::util::{output_debug, to_cw_str, to_w_str};
+use autopower_shared::util::{output_debug, to_win32_wstr};
 use notifications::NotificationProvider;
 use std::ffi::c_void;
 use windows::{
@@ -61,9 +61,13 @@ fn handle_on_wall_power() {
     unsafe {
         PowerSetActiveScheme(None, Some(&GUID_MIN_POWER_SAVINGS));
         if let Some(notifications) = &NOTIFICATION_PROVIDER {
-            notifications
-                .send_display_command(SERVICE_NAME, "Switching to High Performance.")
-                .ok();
+            match notifications.send_display_command(SERVICE_NAME, "Switching to High Performance.")
+            {
+                Ok(_) => (),
+                Err(e) => {
+                    output_debug(&format!("Could not send notification!\n{}", e)).ok();
+                }
+            }
         }
     }
 }
@@ -72,9 +76,12 @@ fn handle_on_battery_power() {
     unsafe {
         PowerSetActiveScheme(None, Some(&GUID_TYPICAL_POWER_SAVINGS));
         if let Some(notifications) = &NOTIFICATION_PROVIDER {
-            notifications
-                .send_display_command(SERVICE_NAME, "Switching to Balanced.")
-                .ok();
+            match notifications.send_display_command(SERVICE_NAME, "Switching to Balanced.") {
+                Ok(_) => (),
+                Err(e) => {
+                    output_debug(&format!("Could not send notification!\n{}", e)).ok();
+                }
+            }
         }
     }
 }
@@ -123,13 +130,20 @@ unsafe extern "system" fn service_ctrl_handler(
 unsafe extern "system" fn service_main(_arg_num: u32, _args: *mut PWSTR) {
     output_debug("Starting AutoPower...").ok();
 
+    let service_name = to_win32_wstr(SERVICE_NAME);
+
     STATUS_HANDLE = Some(
-        RegisterServiceCtrlHandlerExW(to_cw_str(SERVICE_NAME), Some(service_ctrl_handler), None)
+        RegisterServiceCtrlHandlerExW(service_name.get_const(), Some(service_ctrl_handler), None)
             .expect("Could not register service control handler!"),
     );
 
-    NOTIFICATION_PROVIDER =
-        Some(NotificationProvider::create().expect("Could not create notification provider!"));
+    NOTIFICATION_PROVIDER = Some(match NotificationProvider::create() {
+        Ok(x) => x,
+        Err(e) => {
+            output_debug(&format!("Could not create notification provider!\n{}", e)).ok();
+            panic!();
+        }
+    });
 
     set_service_status(SERVICE_START_PENDING, None, None).unwrap();
 
@@ -158,8 +172,9 @@ unsafe extern "system" fn service_main(_arg_num: u32, _args: *mut PWSTR) {
 }
 
 fn service_setup() -> Result<()> {
+    let service_name = to_win32_wstr(SERVICE_NAME);
     let service_entry = SERVICE_TABLE_ENTRYW {
-        lpServiceName: to_w_str(SERVICE_NAME),
+        lpServiceName: service_name.get(),
         lpServiceProc: Some(service_main),
     };
 
