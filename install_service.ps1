@@ -9,7 +9,7 @@ if (-not $IsAdmin) {
 }
 
 $ServiceName = 'AutoPower'
-$Dir = "$($PSScriptRoot)\auto_power.exe"
+$Dir = "$($PSScriptRoot)\autopower.exe"
 
 sc.exe create $ServiceName binPath=$Dir start=delayed-auto
 sc.exe start $ServiceName

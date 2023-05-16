@@ -1,7 +1,9 @@
-#[cfg(feature = "notification")]
+mod client_pipe;
 mod notifications;
+mod user_process;
+mod util;
 
-use autopower_shared::util::{output_debug, to_win32_wstr};
+use autopower_shared::{logging::Logger, util::to_win32_wstr};
 use notifications::NotificationProvider;
 use std::ffi::c_void;
 use windows::{
@@ -38,6 +40,29 @@ static mut STATUS_HANDLE: Option<SERVICE_STATUS_HANDLE> = None;
 static mut STOP_EVENT: Option<HANDLE> = None;
 static mut NOTIFICATION_PROVIDER: Option<NotificationProvider> = None;
 
+const LOGGER: Logger = Logger::new("main_service", "autopower");
+
+enum PowerScheme {
+    HighPerformance,
+    Balanced,
+}
+
+impl PowerScheme {
+    pub const fn to_guid(&self) -> windows::core::GUID {
+        match self {
+            Self::HighPerformance => GUID_MIN_POWER_SAVINGS,
+            Self::Balanced => GUID_TYPICAL_POWER_SAVINGS,
+        }
+    }
+
+    pub const fn get_name(&self) -> &'static str {
+        match self {
+            Self::HighPerformance => "High Performance",
+            Self::Balanced => "Balanced",
+        }
+    }
+}
+
 fn set_service_status(
     state: SERVICE_STATUS_CURRENT_STATE,
     checkpoint: Option<u32>,
@@ -57,60 +82,60 @@ fn set_service_status(
     Ok(())
 }
 
-fn handle_on_wall_power() {
+fn set_power_scheme(scheme: PowerScheme) -> Result<()> {
     unsafe {
-        PowerSetActiveScheme(None, Some(&GUID_MIN_POWER_SAVINGS));
+        PowerSetActiveScheme(None, Some(&scheme.to_guid()));
         if let Some(notifications) = &NOTIFICATION_PROVIDER {
-            match notifications.send_display_command(SERVICE_NAME, "Switching to High Performance.")
-            {
-                Ok(_) => (),
-                Err(e) => {
-                    output_debug(&format!("Could not send notification!\n{}", e)).ok();
-                }
-            }
+            notifications
+                .send_display_command(
+                    SERVICE_NAME,
+                    &format!("Switching to {}.", scheme.get_name()),
+                )
+                .map_err(|e| format!("Could not send notification!\n{}", e))?;
         }
     }
+    Ok(())
 }
 
-fn handle_on_battery_power() {
-    unsafe {
-        PowerSetActiveScheme(None, Some(&GUID_TYPICAL_POWER_SAVINGS));
-        if let Some(notifications) = &NOTIFICATION_PROVIDER {
-            match notifications.send_display_command(SERVICE_NAME, "Switching to Balanced.") {
-                Ok(_) => (),
-                Err(e) => {
-                    output_debug(&format!("Could not send notification!\n{}", e)).ok();
-                }
-            }
-        }
-    }
+fn handle_on_wall_power() -> Result<()> {
+    set_power_scheme(PowerScheme::HighPerformance)?;
+    Ok(())
 }
 
-fn handle_power_event(event_type: u32, event_data: *mut c_void) {
+fn handle_on_battery_power() -> Result<()> {
+    set_power_scheme(PowerScheme::Balanced)?;
+    Ok(())
+}
+
+fn handle_power_event(event_type: u32, event_data: *mut c_void) -> Result<()> {
     if event_type != PBT_POWERSETTINGCHANGE {
-        return;
+        return Ok(());
     }
 
     let pbs = event_data as *mut POWERBROADCAST_SETTING;
     if unsafe { (*pbs).PowerSetting } != GUID_ACDC_POWER_SOURCE {
-        return;
+        return Ok(());
     }
 
     let new_power = unsafe { (*pbs).Data[0] };
     match SYSTEM_POWER_CONDITION(new_power as i32) {
-        Power::PoAc => handle_on_wall_power(),
-        Power::PoDc => handle_on_battery_power(),
+        Power::PoAc => handle_on_wall_power()?,
+        Power::PoDc => handle_on_battery_power()?,
         _ => (),
     }
+    Ok(())
 }
 
-fn handle_stop() {
-    if unsafe { CURRENT_STATUS.unwrap() }.dwCurrentState != SERVICE_RUNNING {
-        return;
+fn handle_stop() -> Result<()> {
+    if unsafe { CURRENT_STATUS.ok_or("Current status was not set when stopping!")? }.dwCurrentState
+        != SERVICE_RUNNING
+    {
+        return Ok(());
     }
 
     set_service_status(SERVICE_STOP_PENDING, Some(4), None).unwrap();
-    unsafe { SetEvent(STOP_EVENT.expect("Stop event was not created!")) };
+    unsafe { SetEvent(STOP_EVENT.ok_or("Stop event was not created!")?) };
+    Ok(())
 }
 
 unsafe extern "system" fn service_ctrl_handler(
@@ -119,59 +144,93 @@ unsafe extern "system" fn service_ctrl_handler(
     event_data: *mut c_void,
     _context: *mut c_void,
 ) -> u32 {
-    match ctrl_code {
+    let handler_result = match ctrl_code {
         SERVICE_CONTROL_POWEREVENT => handle_power_event(event_type, event_data),
         SERVICE_CONTROL_STOP => handle_stop(),
-        _ => (),
+        _ => Ok(()),
+    };
+    if let Err(e) = handler_result {
+        LOGGER.debug_log(e);
     }
     NO_ERROR.0
 }
 
 unsafe extern "system" fn service_main(_arg_num: u32, _args: *mut PWSTR) {
-    output_debug("Starting AutoPower...").ok();
+    LOGGER.debug_log("Starting AutoPower...");
 
     let service_name = to_win32_wstr(SERVICE_NAME);
 
     STATUS_HANDLE = Some(
-        RegisterServiceCtrlHandlerExW(service_name.get_const(), Some(service_ctrl_handler), None)
-            .expect("Could not register service control handler!"),
+        match RegisterServiceCtrlHandlerExW(
+            service_name.get_const(),
+            Some(service_ctrl_handler),
+            None,
+        ) {
+            Ok(x) => x,
+            Err(e) => {
+                LOGGER.debug_log(format!(
+                    "Could not register service control handler!\n{}",
+                    e
+                ));
+                panic!();
+            }
+        },
     );
 
     NOTIFICATION_PROVIDER = Some(match NotificationProvider::create() {
         Ok(x) => x,
         Err(e) => {
-            output_debug(&format!("Could not create notification provider!\n{}", e)).ok();
+            LOGGER.debug_log(format!("Could not create notification provider!\n{}", e));
             panic!();
         }
     });
 
-    set_service_status(SERVICE_START_PENDING, None, None).unwrap();
+    if let Err(e) = set_service_status(SERVICE_START_PENDING, None, None) {
+        LOGGER.debug_log(format!("Could not set service status!\n{}", e));
+    }
 
-    RegisterPowerSettingNotification(HANDLE(STATUS_HANDLE.unwrap().0), &GUID_ACDC_POWER_SOURCE, 1)
-        .unwrap();
+    if let Err(e) = RegisterPowerSettingNotification(
+        HANDLE(STATUS_HANDLE.unwrap().0),
+        &GUID_ACDC_POWER_SOURCE,
+        1,
+    ) {
+        LOGGER.debug_log(format!(
+            "Could not register power settings notification!\n{}",
+            e
+        ));
+    }
 
     STOP_EVENT = Some(match CreateEventW(None, TRUE, FALSE, None) {
         Ok(x) => x,
         Err(err) => {
-            set_service_status(SERVICE_STOPPED, None, None).unwrap();
-            panic!("Could create stop event!\n{}", err);
+            LOGGER.debug_log(format!("Could not create stop event!\n{}", err));
+            if let Err(e) = set_service_status(SERVICE_STOPPED, None, None) {
+                LOGGER.debug_log(format!("Could set service status!\n{}", e));
+            }
+            panic!();
         }
     });
 
-    set_service_status(
+    if let Err(e) = set_service_status(
         SERVICE_RUNNING,
         None,
         Some(SERVICE_ACCEPT_STOP | SERVICE_ACCEPT_POWEREVENT),
-    )
-    .unwrap();
+    ) {
+        LOGGER.debug_log(format!("Could not set service status!\n{}", e));
+    }
 
     // Wait for exit.
     WaitForSingleObject(STOP_EVENT.unwrap(), INFINITE);
     CloseHandle(STOP_EVENT.unwrap());
-    set_service_status(SERVICE_STOPPED, Some(3), None).expect("Could not set service status.");
+
+    if let Err(e) = set_service_status(SERVICE_STOPPED, Some(3), None) {
+        LOGGER.debug_log(format!("Could not set service status!\n{}", e));
+    }
+    NOTIFICATION_PROVIDER.as_ref().unwrap().terminate();
 }
 
 fn service_setup() -> Result<()> {
+    LOGGER.debug_log("Starting...");
     let service_name = to_win32_wstr(SERVICE_NAME);
     let service_entry = SERVICE_TABLE_ENTRYW {
         lpServiceName: service_name.get(),

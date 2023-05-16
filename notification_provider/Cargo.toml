@@ -1,16 +1,22 @@
 [package]
 name = "autopower_notification_provider"
-version = "0.1.0"
+version = "1.0.0"
 edition = "2021"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
 autopower_shared = { path = "../shared" }
-serde = { version = "1.0.163", features = ["derive"] }
-serde_json = "1.0.96"
+serde = { version = "^1.0", features = ["derive"] }
+serde_json = "^1.0"
 windows = { version = "0.48", features = [
     "Foundation",
     "UI_Notifications",
     "Data_Xml_Dom",
+    "Win32_Foundation",
+    "Win32_System_Pipes",
+    "Win32_Security",
+    "Win32_Storage_FileSystem",
+    "Win32_System_IO",
+    "Win32_System_Com",
 ] }

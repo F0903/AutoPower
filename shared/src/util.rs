@@ -1,6 +1,10 @@
-use std::io::Write;
-
-use windows::core::{HSTRING, PCWSTR, PWSTR};
+use windows::{
+    core::{HSTRING, PCWSTR, PWSTR},
+    Win32::{
+        Foundation::GetLastError,
+        System::Diagnostics::Debug::{FormatMessageW, FORMAT_MESSAGE_FROM_SYSTEM},
+    },
+};
 
 type Result<T> = std::result::Result<T, Box<dyn std::error::Error>>;
 
@@ -24,21 +28,6 @@ impl<T> Win32StrPtr<T> {
     }
 }
 
-pub fn output_debug(input: &str) -> Result<()> {
-    const DEBUG_PATH: &str = "C:/autorun_debug.txt";
-    let mut file = std::fs::File::options()
-        .create(true)
-        .write(true)
-        .append(true)
-        .read(true)
-        .open(DEBUG_PATH)?;
-    let mut buf = Vec::with_capacity(input.len() + 1);
-    buf.write_all(input.as_bytes())?;
-    buf.write_all(b"\n")?;
-    file.write_all(&buf)?;
-    Ok(())
-}
-
 fn get_nullterminated_utf16_from_utf8(input: &str) -> Vec<u16> {
     input
         .encode_utf16()
@@ -59,4 +48,23 @@ pub fn to_h_string(input: &str) -> Result<HSTRING> {
     let data = get_nullterminated_utf16_from_utf8(input);
     let str = HSTRING::from_wide(&data)?;
     Ok(str)
+}
+
+pub fn get_last_win32_err() -> Result<String> {
+    let err = unsafe { GetLastError() };
+    const BUF_SIZE: usize = 128;
+    let buf: PWSTR = PWSTR::from_raw([0; BUF_SIZE + 1].as_mut_ptr());
+    let count = unsafe {
+        FormatMessageW(
+            FORMAT_MESSAGE_FROM_SYSTEM,
+            None,
+            err.0,
+            0,
+            buf,
+            BUF_SIZE as u32,
+            None,
+        )
+    };
+    let str = unsafe { buf.to_string()? };
+    return Ok(str[..count as usize].to_owned());
 }

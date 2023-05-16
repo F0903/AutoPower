@@ -3,8 +3,8 @@
 version = 3
 
 [[package]]
-name = "auto_power"
-version = "0.1.0"
+name = "autopower"
+version = "1.0.0"
 dependencies = [
  "autopower_shared",
  "serde",
@@ -14,7 +14,7 @@ dependencies = [
 
 [[package]]
 name = "autopower_notification_provider"
-version = "0.1.0"
+version = "1.0.0"
 dependencies = [
  "autopower_shared",
  "serde",
@@ -26,8 +26,10 @@ dependencies = [
 name = "autopower_shared"
 version = "0.1.0"
 dependencies = [
+ "once_cell",
  "serde",
  "serde_json",
+ "time",
  "windows",
 ]
 
@@ -36,6 +38,12 @@ name = "itoa"
 version = "1.0.6"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "453ad9f582a441959e5f0d088b02ce04cfe8d51a8eaf077f12ac6d3e94164ca6"
+
+[[package]]
+name = "once_cell"
+version = "1.17.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "b7e5500299e16ebb147ae15a00a942af264cf3688f47923b8fc2cd5858f23ad3"
 
 [[package]]
 name = "proc-macro2"
@@ -101,6 +109,33 @@ dependencies = [
  "proc-macro2",
  "quote",
  "unicode-ident",
+]
+
+[[package]]
+name = "time"
+version = "0.3.21"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "8f3403384eaacbca9923fa06940178ac13e4edb725486d70e8e15881d0c836cc"
+dependencies = [
+ "itoa",
+ "serde",
+ "time-core",
+ "time-macros",
+]
+
+[[package]]
+name = "time-core"
+version = "0.1.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "7300fbefb4dadc1af235a9cef3737cea692a9d97e1b9cbcd4ebdae6f8868e6fb"
+
+[[package]]
+name = "time-macros"
+version = "0.2.9"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "372950940a5f07bf38dbe211d7283c9e6d7327df53794992d293e534c733d09b"
+dependencies = [
+ "time-core",
 ]
 
 [[package]]

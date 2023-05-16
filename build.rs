@@ -1,6 +1,6 @@
 type Result<T> = std::result::Result<T, Box<dyn std::error::Error>>;
 
-fn copy_install_scripts() -> Result<()> {
+fn copy_powershell_scripts() -> Result<()> {
     for file in std::fs::read_dir("./")? {
         let file = file?;
         let file_name = file.file_name();
@@ -15,13 +15,12 @@ fn copy_install_scripts() -> Result<()> {
             continue;
         }
 
-        println!("{}", file_name_str);
         std::fs::copy(file.path(), format!("./target/release/{}", file_name_str))?;
     }
     Ok(())
 }
 
 fn main() -> Result<()> {
-    copy_install_scripts()?;
+    copy_powershell_scripts()?;
     Ok(())
 }
