@@ -34,6 +34,7 @@ impl<'a> Toast<'a> {
 
     pub fn send(&self) -> Result<()> {
         let toast = self.create_notifcation()?;
+        toast.SetExpiresOnReboot(true)?;
         let title = to_h_string(self.title)?;
         let notifier = ToastNotificationManager::CreateToastNotifierWithId(&title)?;
         notifier.Show(&toast)?;

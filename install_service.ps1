@@ -11,7 +11,7 @@ if (-not $IsAdmin) {
 $ServiceName = 'AutoPower'
 $Dir = "$($PSScriptRoot)\autopower.exe"
 
-sc.exe create $ServiceName binPath=$Dir start=delayed-auto
+sc.exe create $ServiceName binPath=$Dir start=auto depend=LanmanServer/Power
 sc.exe start $ServiceName
 Write-Output "`r`nDone!`r`n"
 Pause
