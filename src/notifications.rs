@@ -38,6 +38,7 @@ impl NotificationProvider {
     }
 
     pub fn terminate(&self) {
+        LOGGER.debug_log("Terminating notification provider...");
         self.process.terminate();
         self.pipe.close();
     }
@@ -45,6 +46,7 @@ impl NotificationProvider {
 
 impl Drop for NotificationProvider {
     fn drop(&mut self) {
+        LOGGER.debug_log("Dropping notification provider...");
         self.terminate();
     }
 }

@@ -165,9 +165,11 @@ unsafe extern "system" fn service_main(_arg_num: u32, _args: *mut PWSTR) {
             panic!();
         }
     });
+    LOGGER.debug_log("Creation of notification provider successful.");
 
     let service_name = to_win32_wstr(SERVICE_NAME);
 
+    LOGGER.debug_log("Registering service control handler...");
     STATUS_HANDLE = Some(
         match RegisterServiceCtrlHandlerExW(
             service_name.get_const(),
@@ -189,6 +191,7 @@ unsafe extern "system" fn service_main(_arg_num: u32, _args: *mut PWSTR) {
         LOGGER.debug_log(format!("Could not set service status!\n{}", e));
     }
 
+    LOGGER.debug_log("Registering power setting notification handling...");
     if let Err(e) = RegisterPowerSettingNotification(
         HANDLE(STATUS_HANDLE.unwrap().0),
         &GUID_ACDC_POWER_SOURCE,
@@ -204,9 +207,6 @@ unsafe extern "system" fn service_main(_arg_num: u32, _args: *mut PWSTR) {
         Ok(x) => x,
         Err(err) => {
             LOGGER.debug_log(format!("Could not create stop event!\n{}", err));
-            if let Err(e) = set_service_status(SERVICE_STOPPED, None, None) {
-                LOGGER.debug_log(format!("Could set service status!\n{}", e));
-            }
             panic!();
         }
     });

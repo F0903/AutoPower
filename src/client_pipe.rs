@@ -1,4 +1,4 @@
-use autopower_shared::{notifications::PIPE_PATH_ROOT, winstr::to_win32_wstr};
+use autopower_shared::{logging::Logger, notifications::PIPE_PATH_ROOT, winstr::to_win32_wstr};
 use windows::Win32::{
     Foundation::{CloseHandle, GENERIC_WRITE, HANDLE},
     Storage::FileSystem::{
@@ -7,6 +7,8 @@ use windows::Win32::{
 };
 
 type Result<T> = std::result::Result<T, Box<dyn std::error::Error>>;
+
+const LOGGER: Logger = Logger::new("client_pipe", "autopower");
 
 const PIPE_CONNECT_ATTEMPTS: usize = 15;
 
@@ -68,6 +70,7 @@ impl Pipe {
     }
 
     pub fn close(&self) {
+        LOGGER.debug_log("Terminating pipe...");
         unsafe {
             CloseHandle(self.handle);
         }
@@ -76,6 +79,7 @@ impl Pipe {
 
 impl Drop for Pipe {
     fn drop(&mut self) {
+        LOGGER.debug_log("Dropping pipe...");
         unsafe {
             CloseHandle(self.handle);
         }
