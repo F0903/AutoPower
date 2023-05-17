@@ -1,10 +1,12 @@
 mod client_pipe;
 mod notifications;
+mod power;
 mod user_process;
 mod util;
 
 use autopower_shared::{logging::Logger, winstr::to_win32_wstr};
 use notifications::NotificationProvider;
+use power::{set_power_scheme, PowerScheme};
 use std::ffi::c_void;
 use windows::{
     core::PWSTR,
@@ -12,8 +14,8 @@ use windows::{
         Foundation::{CloseHandle, GetLastError, FALSE, HANDLE, NO_ERROR, TRUE},
         System::{
             Power::{
-                self, PowerSetActiveScheme, RegisterPowerSettingNotification,
-                POWERBROADCAST_SETTING, SYSTEM_POWER_CONDITION,
+                self, RegisterPowerSettingNotification, POWERBROADCAST_SETTING,
+                SYSTEM_POWER_CONDITION,
             },
             Services::{
                 RegisterServiceCtrlHandlerExW, SetServiceStatus, StartServiceCtrlDispatcherW,
@@ -22,9 +24,7 @@ use windows::{
                 SERVICE_STATUS_CURRENT_STATE, SERVICE_STATUS_HANDLE, SERVICE_STOPPED,
                 SERVICE_STOP_PENDING, SERVICE_TABLE_ENTRYW, SERVICE_WIN32_OWN_PROCESS,
             },
-            SystemServices::{
-                GUID_ACDC_POWER_SOURCE, GUID_MIN_POWER_SAVINGS, GUID_TYPICAL_POWER_SAVINGS,
-            },
+            SystemServices::GUID_ACDC_POWER_SOURCE,
             Threading::{CreateEventW, SetEvent, WaitForSingleObject, INFINITE},
         },
         UI::WindowsAndMessaging::PBT_POWERSETTINGCHANGE,
@@ -42,27 +42,6 @@ static mut NOTIFICATION_PROVIDER: Option<NotificationProvider> = None;
 
 const LOGGER: Logger = Logger::new("main_service", "autopower");
 
-enum PowerScheme {
-    HighPerformance,
-    Balanced,
-}
-
-impl PowerScheme {
-    pub const fn to_guid(&self) -> windows::core::GUID {
-        match self {
-            Self::HighPerformance => GUID_MIN_POWER_SAVINGS,
-            Self::Balanced => GUID_TYPICAL_POWER_SAVINGS,
-        }
-    }
-
-    pub const fn get_name(&self) -> &'static str {
-        match self {
-            Self::HighPerformance => "High Performance",
-            Self::Balanced => "Balanced",
-        }
-    }
-}
-
 fn set_service_status(
     state: SERVICE_STATUS_CURRENT_STATE,
     checkpoint: Option<u32>,
@@ -78,21 +57,6 @@ fn set_service_status(
     unsafe {
         SetServiceStatus(STATUS_HANDLE.ok_or("STATUS_HANDLE was not set!")?, &status);
         CURRENT_STATUS = Some(status);
-    }
-    Ok(())
-}
-
-fn set_power_scheme(scheme: PowerScheme) -> Result<()> {
-    unsafe {
-        PowerSetActiveScheme(None, Some(&scheme.to_guid()));
-        if let Some(notifications) = &NOTIFICATION_PROVIDER {
-            notifications
-                .send_display_command(
-                    SERVICE_NAME,
-                    &format!("Switching to {}.", scheme.get_name()),
-                )
-                .map_err(|e| format!("Could not send notification!\n{}", e))?;
-        }
     }
     Ok(())
 }
@@ -127,13 +91,15 @@ fn handle_power_event(event_type: u32, event_data: *mut c_void) -> Result<()> {
 }
 
 fn handle_stop() -> Result<()> {
+    LOGGER.debug_log("Received stop event... Stopping...");
     if unsafe { CURRENT_STATUS.ok_or("Current status was not set when stopping!")? }.dwCurrentState
         != SERVICE_RUNNING
     {
         return Ok(());
     }
 
-    set_service_status(SERVICE_STOP_PENDING, Some(4), None).unwrap();
+    set_service_status(SERVICE_STOP_PENDING, Some(4), None)
+        .map_err(|_| "Could not set service status!")?;
     unsafe { SetEvent(STOP_EVENT.ok_or("Stop event was not created!")?) };
     Ok(())
 }
@@ -221,6 +187,7 @@ unsafe extern "system" fn service_main(_arg_num: u32, _args: *mut PWSTR) {
 
     // Wait for exit.
     WaitForSingleObject(STOP_EVENT.unwrap(), INFINITE);
+    LOGGER.debug_log("Stop event signaled. Cleaning up and terminating...");
     CloseHandle(STOP_EVENT.unwrap());
 
     if let Err(e) = set_service_status(SERVICE_STOPPED, Some(3), None) {
@@ -230,7 +197,7 @@ unsafe extern "system" fn service_main(_arg_num: u32, _args: *mut PWSTR) {
 }
 
 fn service_setup() -> Result<()> {
-    LOGGER.debug_log("Starting...");
+    LOGGER.debug_log("Starting setup...");
     let mut service_name = to_win32_wstr(SERVICE_NAME);
     let service_entry = SERVICE_TABLE_ENTRYW {
         lpServiceName: service_name.get_mut(),
