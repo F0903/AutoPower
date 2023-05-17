@@ -1,0 +1,32 @@
+name: Rust Stable
+
+on:
+  push:
+    branches: [ "master" ]
+  pull_request:
+    branches: [ "master" ]
+
+env:
+  CARGO_TERM_COLOR: always
+
+jobs:
+  build:
+
+    runs-on: windows-latest
+
+    steps:
+    - uses: actions/checkout@v3
+    - name: Cache
+      uses: actions/cache@v3.2.6
+      with:
+        path: target/
+        key: ${{ runner.os }}-${{ hashFiles('Cargo.lock') }}
+    - name: Build
+      run: cargo build --verbose --release
+    - name: Upload a Build Artifact
+      uses: actions/upload-artifact@v3.1.2
+      with:
+        name: ${{ github.event.repository.name }}
+        path: |
+          target/release/*.exe
+          target/release/*.ps1

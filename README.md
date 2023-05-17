@@ -1,12 +1,12 @@
 # AutoPower
 
-A small and efficient Windows service that automatically switches your laptop between the Balanced and High Performance power modes when you plug it in or out of power.
+A small and efficient Windows service that automatically switches your laptop between the Balanced and High Performance power modes when you plug it in or out of power, and sends you a notification.
 
 Uses virtually no CPU, as code only runs when you plug your laptop in or out of power. It also allocates minimal memory, so you don't need to worry about any performance impact when the service is running.
 
 ## Installation
 
-**Note: Only Windows 11/10 is supported due to API requirements.**
+**Note: Only Windows 11/10 is supported due to API requirements.**  
 **Note: Beware that antivirus might flag the service or install scripts.**
 
 Simply clone the project and build with the command `cargo build --release --workspace`.
