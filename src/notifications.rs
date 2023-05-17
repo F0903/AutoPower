@@ -19,7 +19,9 @@ impl NotificationProvider {
             get_service_dir()?,
             NOTIFICATION_PROVIDER_NAME
         ))?;
+        LOGGER.debug_log("Created notification provider process.");
         let pipe = Pipe::create("AutoPowerPipe")?;
+        LOGGER.debug_log("Created notification provider pipe.");
         LOGGER.debug_log("Created notification provider.");
         Ok(NotificationProvider { process, pipe })
     }

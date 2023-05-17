@@ -158,6 +158,14 @@ unsafe extern "system" fn service_ctrl_handler(
 unsafe extern "system" fn service_main(_arg_num: u32, _args: *mut PWSTR) {
     LOGGER.debug_log("Starting AutoPower...");
 
+    NOTIFICATION_PROVIDER = Some(match NotificationProvider::create() {
+        Ok(x) => x,
+        Err(e) => {
+            LOGGER.debug_log(format!("Could not create notification provider!\n{}", e));
+            panic!();
+        }
+    });
+
     let service_name = to_win32_wstr(SERVICE_NAME);
 
     STATUS_HANDLE = Some(
@@ -176,14 +184,6 @@ unsafe extern "system" fn service_main(_arg_num: u32, _args: *mut PWSTR) {
             }
         },
     );
-
-    NOTIFICATION_PROVIDER = Some(match NotificationProvider::create() {
-        Ok(x) => x,
-        Err(e) => {
-            LOGGER.debug_log(format!("Could not create notification provider!\n{}", e));
-            panic!();
-        }
-    });
 
     if let Err(e) = set_service_status(SERVICE_START_PENDING, None, None) {
         LOGGER.debug_log(format!("Could not set service status!\n{}", e));
