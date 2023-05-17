@@ -10,7 +10,7 @@ use windows::{
             Environment::{CreateEnvironmentBlock, DestroyEnvironmentBlock},
             RemoteDesktop::{
                 WTSActive, WTSEnumerateSessionsW, WTSFreeMemory, WTSQueryUserToken,
-                WTS_CONNECTSTATE_CLASS, WTS_CURRENT_SERVER, WTS_SESSION_INFOW,
+                WTS_CURRENT_SERVER, WTS_SESSION_INFOW,
             },
             Threading::{
                 CreateProcessAsUserW, GetProcessId, OpenProcess, TerminateProcess,
@@ -49,7 +49,6 @@ impl UserProcess {
             panic!();
         }
 
-        let mut lowest_state: WTS_CONNECTSTATE_CLASS = WTS_CONNECTSTATE_CLASS(9999);
         let mut session_id = 0;
         for i in 0..session_count {
             let info = unsafe { *(session_info.add(i as usize)) };
@@ -59,26 +58,11 @@ impl UserProcess {
                 info.State,
                 unsafe { info.pWinStationName.to_string().unwrap() }
             ));
-            if info.State.0 < lowest_state.0 {
-                lowest_state = info.State
-            }
             if info.State != WTSActive {
                 continue;
             }
             session_id = info.SessionId;
             break;
-        }
-
-        if lowest_state != WTSActive {
-            loop {
-                LOGGER.debug_log("Could not get session id... Waiting and trying again...");
-                let id = Self::get_current_session_id();
-                if id != 0 {
-                    session_id = id;
-                    break;
-                }
-                std::thread::sleep(std::time::Duration::from_millis(500));
-            }
         }
 
         unsafe {
@@ -88,10 +72,18 @@ impl UserProcess {
     }
 
     pub fn create(path: impl AsRef<str>) -> Result<Self> {
-        let session_id = Self::get_current_session_id();
+        let mut session_id = Self::get_current_session_id();
         if session_id == 0 {
-            LOGGER.debug_log("Was not able to get session id!");
-            return Err("Was not able to get session id!".into());
+            loop {
+                LOGGER.debug_log("Could not get session id... Waiting and trying again...");
+                std::thread::sleep(std::time::Duration::from_millis(500));
+                let id = Self::get_current_session_id();
+                if id == 0 {
+                    continue;
+                }
+                session_id = id;
+                break;
+            }
         }
 
         let mut token_handle = HANDLE::default();
