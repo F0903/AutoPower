@@ -8,7 +8,7 @@ use windows::Win32::{
 
 type Result<T> = std::result::Result<T, Box<dyn std::error::Error>>;
 
-const PIPE_CONNECT_ATTEMPTS: usize = 5;
+const PIPE_CONNECT_ATTEMPTS: usize = 10;
 
 pub struct Pipe {
     handle: HANDLE,
@@ -39,7 +39,7 @@ impl Pipe {
                 }
 
                 // If we can't connect, it might be due to the other process not having created the pipe yet.
-                std::thread::sleep(std::time::Duration::from_millis(100));
+                std::thread::sleep(std::time::Duration::from_millis(500));
             }
         };
 

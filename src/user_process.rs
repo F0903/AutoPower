@@ -76,7 +76,7 @@ impl UserProcess {
         if session_id == 0 {
             loop {
                 LOGGER.debug_log("Could not get session id... Waiting and trying again...");
-                std::thread::sleep(std::time::Duration::from_millis(500));
+                std::thread::sleep(std::time::Duration::from_millis(1000));
                 let id = Self::get_current_session_id();
                 if id == 0 {
                     continue;
