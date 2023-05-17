@@ -1,4 +1,4 @@
-use autopower_shared::{notifications::PIPE_PATH_ROOT, util::to_win32_wstr};
+use autopower_shared::{notifications::PIPE_PATH_ROOT, winstr::to_win32_wstr};
 use windows::Win32::{
     Foundation::{CloseHandle, GENERIC_WRITE, HANDLE},
     Storage::FileSystem::{

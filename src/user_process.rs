@@ -1,7 +1,4 @@
-use autopower_shared::{
-    logging::Logger,
-    util::{get_last_win32_err, to_win32_wstr},
-};
+use autopower_shared::{logging::Logger, util::get_last_win32_err, winstr::to_win32_wstr};
 use windows::{
     core::PWSTR,
     Win32::{
@@ -105,7 +102,7 @@ impl UserProcess {
 
         let start_info = STARTUPINFOW {
             cb: std::mem::size_of::<STARTUPINFOW>() as u32,
-            lpDesktop: to_win32_wstr("winsta0\\default").get(),
+            lpDesktop: to_win32_wstr("winsta0\\default").get_mut(),
             ..Default::default()
         };
 

@@ -1,4 +1,4 @@
-use autopower_shared::util::to_win32_wstr;
+use autopower_shared::winstr::to_win32_wstr;
 use windows::Win32::System::Services::{
     OpenSCManagerW, OpenServiceW, QueryServiceConfigW, QUERY_SERVICE_CONFIGW, SC_MANAGER_CONNECT,
     SERVICE_QUERY_CONFIG,

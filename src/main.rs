@@ -3,7 +3,7 @@ mod notifications;
 mod user_process;
 mod util;
 
-use autopower_shared::{logging::Logger, util::to_win32_wstr};
+use autopower_shared::{logging::Logger, winstr::to_win32_wstr};
 use notifications::NotificationProvider;
 use std::ffi::c_void;
 use windows::{
@@ -231,9 +231,9 @@ unsafe extern "system" fn service_main(_arg_num: u32, _args: *mut PWSTR) {
 
 fn service_setup() -> Result<()> {
     LOGGER.debug_log("Starting...");
-    let service_name = to_win32_wstr(SERVICE_NAME);
+    let mut service_name = to_win32_wstr(SERVICE_NAME);
     let service_entry = SERVICE_TABLE_ENTRYW {
-        lpServiceName: service_name.get(),
+        lpServiceName: service_name.get_mut(),
         lpServiceProc: Some(service_main),
     };
 

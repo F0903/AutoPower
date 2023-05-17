@@ -1,4 +1,4 @@
-use autopower_shared::util::to_h_string;
+use autopower_shared::winstr::to_h_string;
 use windows::{
     core::HSTRING,
     h,

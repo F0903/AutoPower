@@ -2,7 +2,7 @@ mod toast;
 
 use autopower_shared::logging::Logger;
 use autopower_shared::notifications::{NOTIFICATION_PIPE_NAME, PIPE_PATH_ROOT};
-use autopower_shared::util::to_win32_wstr;
+use autopower_shared::winstr::to_win32_wstr;
 use autopower_shared::{notifications::NotificationCommand, util::get_last_win32_err};
 use toast::Toast;
 use windows::Win32::{
