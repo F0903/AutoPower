@@ -12,6 +12,7 @@ $ServiceName = 'AutoPower'
 $Dir = "$($PSScriptRoot)\autopower.exe"
 
 # Some of these are a shot in the dark...
+# WpnService IS REQUIRED
 sc.exe create $ServiceName binPath=$Dir start=auto depend=LanmanServer/LanmanWorkstation/LSM/Power/SessionEnv/DcomLaunch/WpnService
 sc.exe start $ServiceName
 Write-Output "`r`nDone!`r`n"
