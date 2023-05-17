@@ -1,0 +1,37 @@
+name: Create Release
+
+on:
+  workflow_dispatch:
+
+env:
+  CARGO_TERM_COLOR: always
+
+jobs:
+  build:
+
+    runs-on: windows-latest
+    
+    permissions:
+      contents: write
+    
+    steps:
+    - uses: actions/checkout@v3
+    - name: Cache
+      uses: actions/cache@v3.2.6
+      with:
+          path: target/
+          key: ${{ runner.os }}-${{ hashFiles('Cargo.lock') }}
+    - name: Build
+      run: cargo build --verbose --release
+    - name: Version
+      run: echo "::set-output name=version::$(.\target\release\autopower.exe version)"
+      id: version
+    - name: Create release
+      uses: softprops/action-gh-release@v1
+      with:
+        tag_name: ${{ steps.Version.outputs.version }}
+        files: |
+          target/release/autopower.exe
+          target/release/autopower_notification_provider.exe
+          target/release/install_service.ps1
+          target/release/uninstall_service.ps1
