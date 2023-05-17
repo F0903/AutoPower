@@ -8,7 +8,7 @@ use windows::Win32::{
 
 type Result<T> = std::result::Result<T, Box<dyn std::error::Error>>;
 
-const PIPE_CONNECT_ATTEMPTS: usize = 10;
+const PIPE_CONNECT_ATTEMPTS: usize = 15;
 
 pub struct Pipe {
     handle: HANDLE,
