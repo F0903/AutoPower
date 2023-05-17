@@ -6,7 +6,7 @@ Uses virtually no CPU, as code only runs when you plug your laptop in or out of 
 
 ## Installation
 
-**Note: Only Windows 11/10 is supported due to API requirements.**
+**Note: Only Windows 11/10 is supported due to API requirements.**  
 **Note: Beware that antivirus might flag the service or install scripts.**
 
 Simply clone the project and build with the command `cargo build --release --workspace`.
