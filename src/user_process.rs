@@ -31,7 +31,9 @@ pub struct UserProcess {
 }
 
 impl UserProcess {
+    //TODO: Read TODO.md
     fn get_current_session_id() -> u32 {
+        LOGGER.debug_log("Getting session id...");
         let mut session_info: *mut WTS_SESSION_INFOW = std::ptr::null_mut();
         let mut session_count: u32 = 0;
         let result = unsafe {
@@ -48,9 +50,38 @@ impl UserProcess {
             panic!();
         }
 
+        /*
+            #[doc = "*Required features: `\"Win32_System_RemoteDesktop\"`*"]
+            pub const WTSActive: WTS_CONNECTSTATE_CLASS = WTS_CONNECTSTATE_CLASS(0i32);
+            #[doc = "*Required features: `\"Win32_System_RemoteDesktop\"`*"]
+            pub const WTSConnected: WTS_CONNECTSTATE_CLASS = WTS_CONNECTSTATE_CLASS(1i32);
+            #[doc = "*Required features: `\"Win32_System_RemoteDesktop\"`*"]
+            pub const WTSConnectQuery: WTS_CONNECTSTATE_CLASS = WTS_CONNECTSTATE_CLASS(2i32);
+            #[doc = "*Required features: `\"Win32_System_RemoteDesktop\"`*"]
+            pub const WTSShadow: WTS_CONNECTSTATE_CLASS = WTS_CONNECTSTATE_CLASS(3i32);
+            #[doc = "*Required features: `\"Win32_System_RemoteDesktop\"`*"]
+            pub const WTSDisconnected: WTS_CONNECTSTATE_CLASS = WTS_CONNECTSTATE_CLASS(4i32);
+            #[doc = "*Required features: `\"Win32_System_RemoteDesktop\"`*"]
+            pub const WTSIdle: WTS_CONNECTSTATE_CLASS = WTS_CONNECTSTATE_CLASS(5i32);
+            #[doc = "*Required features: `\"Win32_System_RemoteDesktop\"`*"]
+            pub const WTSListen: WTS_CONNECTSTATE_CLASS = WTS_CONNECTSTATE_CLASS(6i32);
+            #[doc = "*Required features: `\"Win32_System_RemoteDesktop\"`*"]
+            pub const WTSReset: WTS_CONNECTSTATE_CLASS = WTS_CONNECTSTATE_CLASS(7i32);
+            #[doc = "*Required features: `\"Win32_System_RemoteDesktop\"`*"]
+            pub const WTSDown: WTS_CONNECTSTATE_CLASS = WTS_CONNECTSTATE_CLASS(8i32);
+            #[doc = "*Required features: `\"Win32_System_RemoteDesktop\"`*"]
+            pub const WTSInit: WTS_CONNECTSTATE_CLASS = WTS_CONNECTSTATE_CLASS(9i32);
+        */
+
         let mut session_id = 0;
         for i in 0..session_count {
             let info = unsafe { *(session_info.add(i as usize)) };
+            LOGGER.debug_log(format!(
+                "Found session: {} | {:?} | {}",
+                info.SessionId,
+                info.State,
+                unsafe { info.pWinStationName.to_string().unwrap() }
+            ));
             if info.State != WTSActive {
                 continue;
             }
