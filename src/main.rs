@@ -247,5 +247,14 @@ fn service_setup() -> Result<()> {
 }
 
 fn main() -> Result<()> {
+    let mut args = std::env::args();
+    if let Some(cmd) = args.nth(1) {
+        match cmd.as_str() {
+            "version" => println!(env!("CARGO_PKG_VERSION")),
+            _ => println!("Unknown command."),
+        }
+        return Ok(());
+    }
+
     service_setup()
 }
