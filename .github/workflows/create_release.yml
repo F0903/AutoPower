@@ -22,7 +22,7 @@ jobs:
           path: target/
           key: ${{ runner.os }}-${{ hashFiles('Cargo.lock') }}
     - name: Build
-      run: cargo build --verbose --release
+      run: cargo build --verbose --release --workspace
     - name: Version
       run: echo "::set-output name=version::$(.\target\release\autopower.exe version)"
       id: version
