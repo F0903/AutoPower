@@ -144,6 +144,7 @@ impl UserProcess {
     }
 
     pub fn terminate(&self) {
+        LOGGER.debug_log("Terminating user process...");
         unsafe {
             let start_handle = self.proc.hProcess;
             let handle = OpenProcess(
@@ -169,6 +170,7 @@ impl UserProcess {
 
 impl Drop for UserProcess {
     fn drop(&mut self) {
+        LOGGER.debug_log("Dropping user process...");
         self.terminate();
     }
 }
