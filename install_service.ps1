@@ -12,7 +12,7 @@ $ServiceName = 'AutoPower'
 $Dir = "$($PSScriptRoot)\autopower.exe"
 
 # Some of these are a shot in the dark...
-sc.exe create $ServiceName binPath=$Dir start=auto depend=LanmanServer/LanmanWorkstation/LSM/SysMain/Power/SessionEnv/AarSvc
+sc.exe create $ServiceName binPath=$Dir start=auto depend=LanmanServer/LanmanWorkstation/LSM/SysMain/Power/SessionEnv
 sc.exe start $ServiceName
 Write-Output "`r`nDone!`r`n"
 Pause
