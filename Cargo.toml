@@ -1,10 +1,18 @@
 [workspace]
 members = ["shared", "notification_provider"]
 
+[workspace.package]
+version = "1.0.1"
+edition = "2021"
+publish = false
+repository = "https://github.com/F0903/AutoPower"
+
 [package]
 name = "autopower"
-version = "1.0.0"
-edition = "2021"
+version.workspace = true
+edition.workspace = true
+publish.workspace = true
+repository.workspace = true
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
