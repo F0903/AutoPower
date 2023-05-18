@@ -106,7 +106,7 @@ impl UserProcess {
             ..Default::default()
         };
 
-        LOGGER.debug_log("Creating notification process...");
+        LOGGER.debug_log("Creating user process...");
         let win32_service_dir = to_win32_wstr(path.as_ref());
         LOGGER.debug_log(format!("{}", unsafe {
             win32_service_dir.get_const().to_string().unwrap()
@@ -135,11 +135,11 @@ impl UserProcess {
 
         if !result.as_bool() {
             let err_msg = get_last_win32_err()?;
-            let msg = format!("Could not create notification provider!\n{}", &err_msg);
+            let msg = format!("Could not create user process!\n{}", &err_msg);
             LOGGER.debug_log(&msg);
             return Err(msg.into());
         };
-        LOGGER.debug_log("Created notificaion process...");
+        LOGGER.debug_log("Created user process...");
         Ok(Self { proc: proc_info })
     }
 
@@ -155,10 +155,7 @@ impl UserProcess {
             .unwrap();
             if !TerminateProcess(handle, 0).as_bool() {
                 let msg = get_last_win32_err().unwrap();
-                LOGGER.debug_log(&format!(
-                    "Could not terminate notification process!\n{}",
-                    msg
-                ));
+                LOGGER.debug_log(&format!("Could not terminate user process!\n{}", msg));
             }
             TerminateProcess(handle, 0);
 
