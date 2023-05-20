@@ -4,7 +4,7 @@ version = 3
 
 [[package]]
 name = "autopower"
-version = "1.0.1"
+version = "1.1.0"
 dependencies = [
  "autopower_shared",
  "serde",
@@ -14,7 +14,7 @@ dependencies = [
 
 [[package]]
 name = "autopower_notification_provider"
-version = "1.0.1"
+version = "1.1.0"
 dependencies = [
  "autopower_shared",
  "serde",
@@ -24,7 +24,7 @@ dependencies = [
 
 [[package]]
 name = "autopower_shared"
-version = "1.0.1"
+version = "1.1.0"
 dependencies = [
  "once_cell",
  "serde",
