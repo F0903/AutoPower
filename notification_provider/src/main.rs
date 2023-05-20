@@ -2,16 +2,31 @@
 
 mod toast;
 
-use autopower_shared::logging::Logger;
-use autopower_shared::notifications::NotificationCommand;
-use autopower_shared::stream::{HandleStream, Read};
+use autopower_shared::{
+    notifications::NotificationCommand,
+    stream::{HandleStream, Read},
+};
 use toast::Toast;
-use windows::Win32::System::Com::CoInitialize;
-use windows::Win32::System::Console::{GetStdHandle, STD_INPUT_HANDLE};
+use windows::Win32::System::{
+    Com::CoInitialize,
+    Console::{GetStdHandle, STD_INPUT_HANDLE},
+};
 
 type Result<T> = std::result::Result<T, Box<dyn std::error::Error>>;
 
-const LOGGER: Logger = Logger::new("main", "autopower_notifier");
+//DEBUG
+struct Logger;
+impl Logger {
+    pub const fn new() -> Self {
+        Self {}
+    }
+
+    pub fn debug_log<T>(&self, x: T) {
+        drop(x);
+    }
+}
+
+const LOGGER: Logger = Logger::new(); //Logger::new("main", "autopower_notifier");
 
 fn execute_display_command(command: NotificationCommand) -> Result<()> {
     let mut cmd_lines = command.content.lines();
