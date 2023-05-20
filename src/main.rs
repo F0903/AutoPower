@@ -1,11 +1,10 @@
-mod client_pipe;
-mod notifications;
+mod notification_provider;
 mod power;
 mod user_process;
 mod util;
 
 use autopower_shared::{logging::Logger, winstr::to_win32_wstr};
-use notifications::NotificationProvider;
+use notification_provider::NotificationProvider;
 use power::{set_power_scheme, PowerScheme};
 use std::ffi::c_void;
 use windows::{
@@ -197,6 +196,10 @@ unsafe extern "system" fn service_main(_arg_num: u32, _args: *mut PWSTR) {
 }
 
 fn service_setup() -> Result<()> {
+    std::panic::set_hook(Box::new(|info| {
+        LOGGER.debug_log(info);
+    }));
+
     LOGGER.debug_log("Starting setup...");
     let mut service_name = to_win32_wstr(SERVICE_NAME);
     let service_entry = SERVICE_TABLE_ENTRYW {

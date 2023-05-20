@@ -21,4 +21,5 @@ windows = { version = "0.48", features = [
     "Win32_Storage_FileSystem",
     "Win32_System_IO",
     "Win32_System_Com",
+    "Win32_System_Console",
 ] }

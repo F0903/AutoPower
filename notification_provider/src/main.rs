@@ -1,22 +1,15 @@
+#![windows_subsystem = "windows"]
+
 mod toast;
 
 use autopower_shared::logging::Logger;
-use autopower_shared::notifications::{NOTIFICATION_PIPE_NAME, PIPE_PATH_ROOT};
-use autopower_shared::winstr::to_win32_wstr;
-use autopower_shared::{notifications::NotificationCommand, util::get_last_win32_err};
+use autopower_shared::notifications::NotificationCommand;
+use autopower_shared::stream::{HandleStream, Read};
 use toast::Toast;
-use windows::Win32::{
-    Foundation::HANDLE,
-    Storage::FileSystem::{ReadFile, PIPE_ACCESS_INBOUND},
-    System::{
-        Com::CoInitialize,
-        Pipes::{ConnectNamedPipe, CreateNamedPipeW, PIPE_TYPE_MESSAGE},
-    },
-};
+use windows::Win32::System::Com::CoInitialize;
+use windows::Win32::System::Console::{GetStdHandle, STD_INPUT_HANDLE};
 
 type Result<T> = std::result::Result<T, Box<dyn std::error::Error>>;
-
-const PIPE_INPUT_BUFFER_SIZE: u32 = 512;
 
 const LOGGER: Logger = Logger::new("main", "autopower_notifier");
 
@@ -38,68 +31,19 @@ fn execute_command(command: NotificationCommand) -> Result<()> {
     }
 }
 
-fn read_notification_command(input_handle: HANDLE) -> Result<NotificationCommand> {
-    let mut buf: [u8; PIPE_INPUT_BUFFER_SIZE as usize] = [0; PIPE_INPUT_BUFFER_SIZE as usize];
-    let mut count: u32 = 0;
-    let result = unsafe {
-        ReadFile(
-            input_handle,
-            Some(buf.as_mut_ptr() as *mut std::ffi::c_void),
-            PIPE_INPUT_BUFFER_SIZE,
-            Some(&mut count as *mut u32),
-            None,
-        )
-    };
-    if !result.as_bool() {
-        let err = get_last_win32_err()?;
-        let err_msg = format!("Could not read from pipe!\n{}", err);
-        LOGGER.debug_log(&err_msg);
-        return Err(err_msg.into());
-    }
-
-    let str = std::str::from_utf8(&buf[..count as usize])?;
-
-    LOGGER.debug_log(format!("notification_provider: read input:\n{}", str));
-    let object = serde_json::from_str::<NotificationCommand>(str)?;
+fn read_notification_command(input_stream: &HandleStream<Read>) -> Result<NotificationCommand> {
+    let input = input_stream.read_string()?;
+    LOGGER.debug_log(format!("notification_provider: read input:\n{}", input));
+    let object = serde_json::from_str::<NotificationCommand>(&input)?;
     Ok(object)
 }
 
-fn create_pipe() -> Result<HANDLE> {
-    let pipe_name = to_win32_wstr(&format!("{}{}", PIPE_PATH_ROOT, NOTIFICATION_PIPE_NAME));
-    let pipe = unsafe {
-        LOGGER.debug_log("Creating pipe...");
-        let pipe = CreateNamedPipeW(
-            pipe_name.get_const(),
-            PIPE_ACCESS_INBOUND,
-            PIPE_TYPE_MESSAGE,
-            1,
-            0,
-            PIPE_INPUT_BUFFER_SIZE,
-            0,
-            None,
-        );
-        if pipe.is_invalid() {
-            let err = get_last_win32_err()?;
-            LOGGER.debug_log(format!("Pipe is invalid!\n{}", err));
-        }
-        LOGGER.debug_log("Waiting for pipe connection...");
-        if !ConnectNamedPipe(pipe, None).as_bool() {
-            let err = get_last_win32_err()?;
-            LOGGER.debug_log(format!(
-                "Could not wait for client to connect to pipe!\n{}",
-                err
-            ));
-        }
-        pipe
-    };
-    Ok(pipe)
-}
-
 fn wait_for_input() -> Result<()> {
-    let pipe = create_pipe()?;
+    let stdin = unsafe { GetStdHandle(STD_INPUT_HANDLE)? };
+    let input_stream = HandleStream::create(stdin);
     LOGGER.debug_log("notification_provider: waiting for input...");
     loop {
-        let command = read_notification_command(pipe)?;
+        let command = read_notification_command(&input_stream)?;
         execute_command(command)?;
     }
 }
@@ -111,6 +55,9 @@ fn run() -> Result<()> {
 }
 
 fn main() -> Result<()> {
+    std::panic::set_hook(Box::new(|info| {
+        LOGGER.debug_log(info);
+    }));
     match run() {
         Ok(_) => (),
         Err(e) => {

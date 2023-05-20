@@ -1,19 +1,29 @@
-use autopower_shared::{logging::Logger, util::get_last_win32_err, winstr::to_win32_wstr};
+use autopower_shared::{
+    logging::Logger,
+    stream::{HandleStream, Write},
+    util::get_last_win32_err,
+    winstr::to_win32_wstr,
+    PIPE_BUFFER_SIZE,
+};
 use windows::{
     core::PWSTR,
     Win32::{
-        Foundation::{CloseHandle, HANDLE},
+        Foundation::{
+            CloseHandle, SetHandleInformation, HANDLE, HANDLE_FLAGS, HANDLE_FLAG_INHERIT,
+        },
+        Security::SECURITY_ATTRIBUTES,
         System::{
             Environment::{CreateEnvironmentBlock, DestroyEnvironmentBlock},
+            Pipes::CreatePipe,
             RemoteDesktop::{
                 WTSActive, WTSEnumerateSessionsW, WTSFreeMemory, WTSQueryUserToken,
                 WTS_CURRENT_SERVER, WTS_SESSION_INFOW,
             },
             Threading::{
                 CreateProcessAsUserW, GetProcessId, OpenProcess, TerminateProcess,
-                CREATE_NO_WINDOW, CREATE_UNICODE_ENVIRONMENT, NORMAL_PRIORITY_CLASS,
-                PROCESS_INFORMATION, PROCESS_QUERY_INFORMATION, PROCESS_READ_CONTROL,
-                PROCESS_TERMINATE, STARTUPINFOW,
+                CREATE_UNICODE_ENVIRONMENT, NORMAL_PRIORITY_CLASS, PROCESS_INFORMATION,
+                PROCESS_QUERY_INFORMATION, PROCESS_READ_CONTROL, PROCESS_TERMINATE,
+                STARTF_USESTDHANDLES, STARTUPINFOW,
             },
         },
     },
@@ -25,6 +35,7 @@ const LOGGER: Logger = Logger::new("user_process", "autopower");
 
 pub struct UserProcess {
     proc: PROCESS_INFORMATION,
+    write_pipe: HandleStream<Write>,
 }
 
 impl UserProcess {
@@ -68,7 +79,7 @@ impl UserProcess {
         return session_id;
     }
 
-    pub fn create(path: impl AsRef<str>) -> Result<Self> {
+    fn get_user_info() -> Result<(HANDLE, *mut std::ffi::c_void)> {
         let mut session_id = Self::get_current_session_id();
         if session_id == 0 {
             loop {
@@ -100,9 +111,50 @@ impl UserProcess {
             return Err("Was not able to create environment block!".into());
         }
 
-        let start_info = STARTUPINFOW {
+        Ok((token_handle, environment))
+    }
+
+    fn create_pipes() -> Result<(HANDLE, HANDLE)> {
+        let security = SECURITY_ATTRIBUTES {
+            nLength: std::mem::size_of::<SECURITY_ATTRIBUTES>() as u32,
+            bInheritHandle: true.into(),
+            lpSecurityDescriptor: std::ptr::null_mut(),
+        };
+
+        let mut read_pipe = HANDLE::default();
+        let mut write_pipe = HANDLE::default();
+        unsafe {
+            let result = CreatePipe(
+                &mut read_pipe as *mut HANDLE,
+                &mut write_pipe as *mut HANDLE,
+                Some(&security),
+                PIPE_BUFFER_SIZE,
+            );
+            if !result.as_bool() {
+                return Err("Could not create pipe!".into());
+            }
+
+            let result = SetHandleInformation(write_pipe, HANDLE_FLAG_INHERIT.0, HANDLE_FLAGS(0));
+            if !result.as_bool() {
+                return Err("Could not set handle info!".into());
+            }
+
+            Ok((read_pipe, write_pipe))
+        }
+    }
+
+    pub fn get_writer(&self) -> &HandleStream<Write> {
+        &self.write_pipe
+    }
+
+    pub fn create(path: impl AsRef<str>) -> Result<Self> {
+        let (token_handle, environment) = Self::get_user_info()?;
+        let (read_pipe, write_pipe) = Self::create_pipes()?;
+        let start_info: STARTUPINFOW = STARTUPINFOW {
             cb: std::mem::size_of::<STARTUPINFOW>() as u32,
             lpDesktop: to_win32_wstr("winsta0\\default").get_mut(),
+            hStdInput: read_pipe,
+            dwFlags: STARTF_USESTDHANDLES,
             ..Default::default()
         };
 
@@ -119,8 +171,8 @@ impl UserProcess {
                 PWSTR::null(),
                 None,
                 None,
-                false,
-                NORMAL_PRIORITY_CLASS | CREATE_UNICODE_ENVIRONMENT | CREATE_NO_WINDOW,
+                true,
+                NORMAL_PRIORITY_CLASS | CREATE_UNICODE_ENVIRONMENT,
                 Some(environment),
                 None,
                 &start_info,
@@ -140,7 +192,11 @@ impl UserProcess {
             return Err(msg.into());
         };
         LOGGER.debug_log("Created user process...");
-        Ok(Self { proc: proc_info })
+
+        Ok(Self {
+            proc: proc_info,
+            write_pipe: HandleStream::create(write_pipe),
+        })
     }
 
     pub fn terminate(&self) {
