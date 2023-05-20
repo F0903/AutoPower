@@ -112,7 +112,10 @@ unsafe extern "system" fn service_ctrl_handler(
     let handler_result = match ctrl_code {
         SERVICE_CONTROL_POWEREVENT => handle_power_event(event_type, event_data),
         SERVICE_CONTROL_STOP => handle_stop(),
-        _ => Ok(()),
+        x => {
+            LOGGER.debug_log(format!("Received unknown control code: {}", x));
+            Ok(())
+        }
     };
     if let Err(e) = handler_result {
         LOGGER.debug_log(e);

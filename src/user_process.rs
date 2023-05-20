@@ -181,8 +181,21 @@ impl UserProcess {
         };
 
         unsafe {
-            DestroyEnvironmentBlock(environment);
-            CloseHandle(token_handle);
+            let result = DestroyEnvironmentBlock(environment);
+            if !result.as_bool() {
+                let err_msg = get_last_win32_err()?;
+                let msg = format!("Could not destroy environment block!\n{}", &err_msg);
+                LOGGER.debug_log(&msg);
+                return Err(msg.into());
+            };
+
+            let result = CloseHandle(token_handle);
+            if !result.as_bool() {
+                let err_msg = get_last_win32_err()?;
+                let msg = format!("Could not close token handle!\n{}", &err_msg);
+                LOGGER.debug_log(&msg);
+                return Err(msg.into());
+            };
         }
 
         if !result.as_bool() {

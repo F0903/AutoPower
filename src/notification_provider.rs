@@ -1,5 +1,5 @@
 use crate::{user_process::UserProcess, util::get_service_dir};
-use autopower_shared::{logging::Logger, notifications::NotificationCommand};
+use autopower_shared::{logging::Logger, notification_command::NotificationCommand};
 
 type Result<T> = std::result::Result<T, Box<dyn std::error::Error>>;
 
@@ -13,7 +13,7 @@ pub struct NotificationProvider {
 
 impl NotificationProvider {
     pub fn create() -> Result<Self> {
-        LOGGER.debug_log("Creating pipe and waiting for connection.");
+        LOGGER.debug_log("Creating process...");
         let process = UserProcess::create(format!(
             "{}\\{}",
             get_service_dir()?,

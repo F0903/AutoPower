@@ -1,5 +1,5 @@
 pub mod logging;
-pub mod notifications;
+pub mod notification_command;
 pub mod stream;
 pub mod util;
 pub mod winstr;
