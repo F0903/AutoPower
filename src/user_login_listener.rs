@@ -60,7 +60,7 @@ impl UserLoginListener {
         let wait_subscription = unsafe {
             EvtSubscribe(
                 None,
-                Some(&wait_event),
+                None,
                 &path,
                 &query,
                 None,
