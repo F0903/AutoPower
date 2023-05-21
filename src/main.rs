@@ -1,9 +1,5 @@
 mod notification_provider;
 mod power;
-mod session;
-mod user_login_listener;
-mod user_process;
-mod util;
 
 use autopower_shared::{logging::Logger, winstr::to_win32_wstr};
 use notification_provider::NotificationProvider;
