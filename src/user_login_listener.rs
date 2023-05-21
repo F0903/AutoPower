@@ -27,8 +27,8 @@ impl UserLoginListener {
     ) -> u32 {
         match action {
             EventLog::EvtSubscribeActionDeliver => {
-                let wait_handle = context as *const HANDLE;
-                let result = SetEvent(*wait_handle);
+                let wait_handle: HANDLE = std::mem::transmute(context);
+                let result = SetEvent(wait_handle);
                 if !result.as_bool() {
                     let err = get_last_win32_err().unwrap();
                     LOGGER.debug_log(format!("Could not set wait event!\n{}", err));
