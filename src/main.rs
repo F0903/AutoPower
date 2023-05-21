@@ -30,6 +30,13 @@ use windows::{
     },
 };
 
+struct HandlerData {
+    event_type: u32,
+    event_data: *mut c_void,
+}
+unsafe impl Send for HandlerData {}
+unsafe impl Sync for HandlerData {}
+
 type Result<T> = std::result::Result<T, Box<dyn std::error::Error>>;
 
 const SERVICE_NAME: &str = "AutoPower";
@@ -70,37 +77,45 @@ fn handle_on_battery_power() -> Result<()> {
     Ok(())
 }
 
-fn handle_power_event(event_type: u32, event_data: *mut c_void) -> Result<()> {
+fn handle_power_event(data: HandlerData) {
+    let HandlerData {
+        event_type,
+        event_data,
+    } = data;
     if event_type != PBT_POWERSETTINGCHANGE {
-        return Ok(());
+        return;
     }
 
     let pbs = event_data as *mut POWERBROADCAST_SETTING;
     if unsafe { (*pbs).PowerSetting } != GUID_ACDC_POWER_SOURCE {
-        return Ok(());
+        return;
     }
 
     let new_power = unsafe { (*pbs).Data[0] };
     match SYSTEM_POWER_CONDITION(new_power as i32) {
-        Power::PoAc => handle_on_wall_power()?,
-        Power::PoDc => handle_on_battery_power()?,
+        Power::PoAc => handle_on_wall_power().unwrap(),
+        Power::PoDc => handle_on_battery_power().unwrap(),
         _ => (),
     }
-    Ok(())
 }
 
-fn handle_stop() -> Result<()> {
+fn handle_stop() {
     LOGGER.debug_log("Received stop event... Stopping...");
-    if unsafe { CURRENT_STATUS.ok_or("Current status was not set when stopping!")? }.dwCurrentState
+    if unsafe {
+        CURRENT_STATUS
+            .ok_or("Current status was not set when stopping!")
+            .unwrap()
+    }
+    .dwCurrentState
         != SERVICE_RUNNING
     {
-        return Ok(());
+        return;
     }
 
     set_service_status(SERVICE_STOP_PENDING, Some(4), None)
-        .map_err(|_| "Could not set service status!")?;
-    unsafe { SetEvent(STOP_EVENT.ok_or("Stop event was not created!")?) };
-    Ok(())
+        .map_err(|_| "Could not set service status!")
+        .unwrap();
+    unsafe { SetEvent(STOP_EVENT.ok_or("Stop event was not created!").unwrap()) };
 }
 
 unsafe extern "system" fn service_ctrl_handler(
@@ -109,31 +124,29 @@ unsafe extern "system" fn service_ctrl_handler(
     event_data: *mut c_void,
     _context: *mut c_void,
 ) -> u32 {
-    let handler_result = match ctrl_code {
-        SERVICE_CONTROL_POWEREVENT => handle_power_event(event_type, event_data),
-        SERVICE_CONTROL_STOP => handle_stop(),
+    // Win32 docs say to start new thread for any other work than returning immediately
+    match ctrl_code {
+        SERVICE_CONTROL_POWEREVENT => {
+            let data = HandlerData {
+                event_type,
+                event_data,
+            };
+            std::thread::spawn(|| {
+                handle_power_event(data);
+            });
+        }
+        SERVICE_CONTROL_STOP => {
+            std::thread::spawn(|| handle_stop());
+        }
         x => {
             LOGGER.debug_log(format!("Received unknown control code: {}", x));
-            Ok(())
         }
     };
-    if let Err(e) = handler_result {
-        LOGGER.debug_log(e);
-    }
     NO_ERROR.0
 }
 
 unsafe extern "system" fn service_main(_arg_num: u32, _args: *mut PWSTR) {
     LOGGER.debug_log("Starting AutoPower...");
-
-    NOTIFICATION_PROVIDER = Some(match NotificationProvider::create() {
-        Ok(x) => x,
-        Err(e) => {
-            LOGGER.debug_log(format!("Could not create notification provider!\n{}", e));
-            panic!();
-        }
-    });
-    LOGGER.debug_log("Creation of notification provider successful.");
 
     let service_name = to_win32_wstr(SERVICE_NAME);
 
@@ -158,6 +171,15 @@ unsafe extern "system" fn service_main(_arg_num: u32, _args: *mut PWSTR) {
     if let Err(e) = set_service_status(SERVICE_START_PENDING, None, None) {
         LOGGER.debug_log(format!("Could not set service status!\n{}", e));
     }
+
+    NOTIFICATION_PROVIDER = Some(match NotificationProvider::create() {
+        Ok(x) => x,
+        Err(e) => {
+            LOGGER.debug_log(format!("Could not create notification provider!\n{}", e));
+            panic!();
+        }
+    });
+    LOGGER.debug_log("Creation of notification provider successful.");
 
     LOGGER.debug_log("Registering power setting notification handling...");
     if let Err(e) = RegisterPowerSettingNotification(
