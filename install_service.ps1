@@ -1,19 +1,13 @@
-$User = [Security.Principal.WindowsIdentity]::GetCurrent()
-$CurrentPrincipal = New-Object Security.Principal.WindowsPrincipal($User)
-$IsAdmin = $CurrentPrincipal.IsInRole([Security.Principal.WindowsBuiltInRole]::Administrator)
+. "$($PSScriptRoot)\variables.ps1"
 
-if (-not $IsAdmin) {
-    Write-Output "Starting a new shell as admin..."
-    Start-Process "powershell" -Wait -Verb RunAs -ArgumentList ('-ExecutionPolicy Bypass -noprofile -file "{0}" -elevated' -f ($MyInvocation.MyCommand.Definition))
-    exit
-}
-
-$ServiceName = 'AutoPower'
-$Dir = "$($PSScriptRoot)\autopower.exe"
+Assert-Admin($MyInvocation.MyCommand.Definition)
 
 # Some of these are a shot in the dark...
 # WpnService IS REQUIRED
 sc.exe create $ServiceName binPath=$Dir start=auto depend=LanmanServer/LanmanWorkstation/LSM/Power/SessionEnv/DcomLaunch/WpnService
-sc.exe start $ServiceName
+New-ItemProperty -Path "HKLM:\SOFTWARE\Microsoft\Windows\CurrentVersion\Run" -Name $NotifierName -Value $NotifierPath -PropertyType "String" -ErrorAction Stop
+
+& "$($PSScriptRoot)\start_service.ps1"
+
 Write-Output "`r`nDone!`r`n"
 Pause

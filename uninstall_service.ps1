@@ -1,17 +1,12 @@
-$User = [Security.Principal.WindowsIdentity]::GetCurrent()
-$CurrentPrincipal = New-Object Security.Principal.WindowsPrincipal($User)
-$IsAdmin = $CurrentPrincipal.IsInRole([Security.Principal.WindowsBuiltInRole]::Administrator)
+. "$($PSScriptRoot)\variables.ps1"
 
-if (-not $IsAdmin) {
-    Write-Output "Starting a new shell as admin..."
-    Start-Process "powershell" -Wait -Verb RunAs -ArgumentList ('-ExecutionPolicy Bypass -noprofile -file "{0}" -elevated' -f ($MyInvocation.MyCommand.Definition))
-    exit
-}
+Assert-Admin($MyInvocation.MyCommand.Definition)
 
-$ServiceName = 'AutoPower'
+& "$($PSScriptRoot)\stop_service.ps1"
 
-sc.exe stop $ServiceName
 sc.exe delete $ServiceName
+
+Remove-ItemProperty -Path "HKLM:\SOFTWARE\Microsoft\Windows\CurrentVersion\Run" -Name "AutoPower Notification Provider"
 
 Remove-Item -LiteralPath "$env:TEMP\autopower" -Force -Recurse
 Write-Output "Deleted autopower log directory."

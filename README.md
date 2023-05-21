@@ -10,10 +10,11 @@ Uses virtually no CPU, as code only runs when you plug your laptop in or out of 
 **Note: Beware that antivirus might flag the service or install scripts.**
 
 Download the files from the latest release, or the build artifacts of the latest commit.
-Afterwards, copy both the autopower.exe, autopower_notification_provider.exe, and .ps1 files from the folder to your desired location. Then simply run the install_service.ps1 script, and everything should work!
+Afterwards, copy both the autopower.exe, autopower_notification_provider.exe, and all .ps1 files from the folder to your desired location. Then simply run the install_service.ps1 script, and everything should work!
 After this, the service will start automatically with your PC.
 
 ## Building
+
 Important to build with the command `cargo build --release --workspace` so all binaries gets built.
 
 ## Uninstallation

@@ -5,13 +5,11 @@ mod toast;
 use autopower_shared::{
     logging::Logger,
     notification_command::NotificationCommand,
-    stream::{HandleStream, Read},
+    pipe::{Client, Pipe, PIPE_NAME},
+    stream::Read,
 };
 use toast::Toast;
-use windows::Win32::System::{
-    Com::CoInitialize,
-    Console::{GetStdHandle, STD_INPUT_HANDLE},
-};
+use windows::Win32::System::Com::CoInitialize;
 
 type Result<T> = std::result::Result<T, Box<dyn std::error::Error>>;
 
@@ -35,26 +33,38 @@ fn execute_command(command: NotificationCommand) -> Result<()> {
     }
 }
 
-fn read_notification_command(input_stream: &HandleStream<Read>) -> Result<NotificationCommand> {
-    let input = input_stream.read_string()?;
-    LOGGER.debug_log(format!("notification_provider: read input:\n{}", input));
-    let object = serde_json::from_str::<NotificationCommand>(&input)?;
+fn read_notification_command(input: &Pipe<Client, Read>) -> Result<NotificationCommand> {
+    let input_string = input
+        .read()
+        .map_err(|e| format!("Could not read input!\n{}", e))?;
+    LOGGER.debug_log(format!(
+        "notification_provider: read input:\n{}",
+        input_string
+    ));
+    let object = serde_json::from_str::<NotificationCommand>(&input_string)
+        .map_err(|e| format!("Could not convert string to command!\n{}", e))?;
     Ok(object)
 }
 
 fn wait_for_input() -> Result<()> {
-    let stdin = unsafe { GetStdHandle(STD_INPUT_HANDLE)? };
-    let input_stream = HandleStream::create(stdin);
+    let input = Pipe::create_client(PIPE_NAME)
+        .map_err(|e| format!("Could not create client pipe!\n{}", e))?;
     LOGGER.debug_log("notification_provider: waiting for input...");
     loop {
-        let command = read_notification_command(&input_stream)?;
-        execute_command(command)?;
+        let command = match read_notification_command(&input) {
+            Ok(x) => x,
+            Err(e) => {
+                LOGGER.debug_log(format!("Could not read command!\n{}", e));
+                return Err(e);
+            }
+        };
+        execute_command(command).map_err(|e| format!("Could not execute command!\n{}", e))?;
     }
 }
 
 fn run() -> Result<()> {
-    unsafe { CoInitialize(None)? };
-    wait_for_input()?;
+    unsafe { CoInitialize(None).map_err(|e| format!("Could not init COM!\n{}", e))? };
+    wait_for_input().map_err(|e| format!("Error occured while waiting for input!\n{}", e))?;
     Ok(())
 }
 

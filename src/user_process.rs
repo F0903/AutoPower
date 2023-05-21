@@ -1,9 +1,9 @@
 use autopower_shared::{
     logging::Logger,
+    pipe::PIPE_BUFFER_SIZE,
     stream::{HandleStream, Write},
     util::get_last_win32_err,
     winstr::to_win32_wstr,
-    PIPE_BUFFER_SIZE,
 };
 use windows::{
     core::PWSTR,

@@ -4,16 +4,24 @@ pub mod writer;
 pub use reader::Read;
 pub use writer::Write;
 
-use windows::Win32::Foundation::{CloseHandle, HANDLE};
+use windows::Win32::{
+    Foundation::{CloseHandle, HANDLE},
+    Storage::FileSystem::FILE_FLAGS_AND_ATTRIBUTES,
+};
 
 type Result<T> = std::result::Result<T, Box<dyn std::error::Error>>;
 
-pub struct HandleStream<M> {
+pub trait HandleStreamMode {
+    fn as_generic_access_rights() -> u32;
+    fn as_pipe_access_rights() -> FILE_FLAGS_AND_ATTRIBUTES;
+}
+
+pub struct HandleStream<M: HandleStreamMode> {
     handle: HANDLE,
     mode: std::marker::PhantomData<M>,
 }
 
-impl<M> HandleStream<M> {
+impl<M: HandleStreamMode> HandleStream<M> {
     pub fn get_raw_handle(&self) -> HANDLE {
         self.handle
     }
@@ -32,7 +40,7 @@ impl<M> HandleStream<M> {
     }
 }
 
-impl<M> Drop for HandleStream<M> {
+impl<M: HandleStreamMode> Drop for HandleStream<M> {
     fn drop(&mut self) {
         self.close()
     }
