@@ -30,7 +30,8 @@ impl UserLoginListener {
                 let wait_handle = context as *const HANDLE;
                 let result = SetEvent(*wait_handle);
                 if !result.as_bool() {
-                    LOGGER.debug_log("Could not set wait event!");
+                    let err = get_last_win32_err().unwrap();
+                    LOGGER.debug_log(format!("Could not set wait event!\n{}", err));
                 }
             }
             _ => (),
