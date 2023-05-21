@@ -1,5 +1,4 @@
 use windows::core::{HSTRING, PCWSTR, PWSTR};
-
 pub struct Win32StrPtr<T> {
     data: Vec<T>,
     len: usize,

@@ -1,5 +1,7 @@
 mod notification_provider;
 mod power;
+mod session;
+mod user_login_listener;
 mod user_process;
 mod util;
 
@@ -7,6 +9,7 @@ use autopower_shared::{logging::Logger, winstr::to_win32_wstr};
 use notification_provider::NotificationProvider;
 use power::{set_power_scheme, PowerScheme};
 use std::ffi::c_void;
+use user_login_listener::UserLoginListener;
 use windows::{
     core::PWSTR,
     Win32::{
@@ -146,7 +149,18 @@ unsafe extern "system" fn service_ctrl_handler(
 }
 
 unsafe extern "system" fn service_main(_arg_num: u32, _args: *mut PWSTR) {
-    LOGGER.debug_log("Starting AutoPower...");
+    let session = session::get_current_session_id().unwrap();
+    // If 0 then there is no active session. (the user has not logged in yet)
+    if session == 0 {
+        let login_listener = match UserLoginListener::new() {
+            Ok(x) => x,
+            Err(err) => {
+                LOGGER.debug_log(format!("Could not create user login listener!\n{}", err));
+                panic!();
+            }
+        };
+        login_listener.wait_for_login();
+    }
 
     let service_name = to_win32_wstr(SERVICE_NAME);
 

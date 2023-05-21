@@ -15,10 +15,7 @@ use windows::{
         System::{
             Environment::{CreateEnvironmentBlock, DestroyEnvironmentBlock},
             Pipes::CreatePipe,
-            RemoteDesktop::{
-                WTSActive, WTSEnumerateSessionsW, WTSFreeMemory, WTSQueryUserToken,
-                WTS_CURRENT_SERVER, WTS_SESSION_INFOW,
-            },
+            RemoteDesktop::WTSQueryUserToken,
             Threading::{
                 CreateProcessAsUserW, GetProcessId, OpenProcess, TerminateProcess,
                 CREATE_UNICODE_ENVIRONMENT, NORMAL_PRIORITY_CLASS, PROCESS_INFORMATION,
@@ -28,6 +25,8 @@ use windows::{
         },
     },
 };
+
+use crate::session::get_current_session_id;
 
 type Result<T> = std::result::Result<T, Box<dyn std::error::Error>>;
 
@@ -39,57 +38,16 @@ pub struct UserProcess {
 }
 
 impl UserProcess {
-    fn get_current_session_id() -> u32 {
-        LOGGER.debug_log("Getting session id...");
-        let mut session_info: *mut WTS_SESSION_INFOW = std::ptr::null_mut();
-        let mut session_count: u32 = 0;
-        let result = unsafe {
-            WTSEnumerateSessionsW(
-                WTS_CURRENT_SERVER,
-                0,
-                1,
-                &mut session_info,
-                &mut session_count,
-            )
-        };
-        if !result.as_bool() {
-            LOGGER.debug_log("Session result was 0!");
-            panic!();
-        }
-
-        let mut session_id = 0;
-        for i in 0..session_count {
-            let info = unsafe { *(session_info.add(i as usize)) };
-            LOGGER.debug_log(format!(
-                "Found session: {} | {:?} | {}",
-                info.SessionId,
-                info.State,
-                unsafe { info.pWinStationName.to_string().unwrap() }
-            ));
-            if info.State != WTSActive {
-                continue;
-            }
-            session_id = info.SessionId;
-            break;
-        }
-
-        unsafe {
-            WTSFreeMemory(session_info as *mut std::ffi::c_void);
-        }
-        return session_id;
-    }
-
     fn get_user_info() -> Result<(HANDLE, *mut std::ffi::c_void)> {
-        let mut session_id = Self::get_current_session_id();
+        let mut session_id = get_current_session_id()?;
         if session_id == 0 {
             loop {
                 LOGGER.debug_log("Could not get session id... Waiting and trying again...");
-                std::thread::sleep(std::time::Duration::from_millis(1000));
-                let id = Self::get_current_session_id();
-                if id == 0 {
+                std::thread::sleep(std::time::Duration::from_millis(2000));
+                session_id = get_current_session_id()?;
+                if session_id == 0 {
                     continue;
                 }
-                session_id = id;
                 break;
             }
         }
@@ -164,7 +122,7 @@ impl UserProcess {
             win32_service_dir.get_const().to_string().unwrap()
         }));
         let mut proc_info = PROCESS_INFORMATION::default();
-        let result = unsafe {
+        let proc_result = unsafe {
             CreateProcessAsUserW(
                 token_handle,
                 win32_service_dir.get_const(),
@@ -198,13 +156,17 @@ impl UserProcess {
             };
         }
 
-        if !result.as_bool() {
+        if !proc_result.as_bool() {
             let err_msg = get_last_win32_err()?;
             let msg = format!("Could not create user process!\n{}", &err_msg);
             LOGGER.debug_log(&msg);
             return Err(msg.into());
         };
         LOGGER.debug_log("Created user process...");
+
+        if let Ok(err) = get_last_win32_err() {
+            LOGGER.debug_log(format!("UserProcess::Create had error at end:\n{}", err));
+        }
 
         Ok(Self {
             proc: proc_info,
