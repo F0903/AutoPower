@@ -2,8 +2,8 @@ use autopower_shared::{logging::Logger, util::get_last_win32_err, winstr::to_h_s
 use windows::Win32::{
     Foundation::{CloseHandle, HANDLE},
     System::{
-        EventLog::{EvtClose, EvtSubscribe, EvtSubscribeToFutureEvents, EVT_HANDLE},
-        Threading::{CreateEventW, WaitForSingleObject, INFINITE},
+        EventLog::{self, EvtClose, EvtSubscribe, EVT_HANDLE, EVT_SUBSCRIBE_NOTIFY_ACTION},
+        Threading::{CreateEventW, SetEvent, WaitForSingleObject, INFINITE},
     },
 };
 
@@ -20,6 +20,24 @@ pub struct UserLoginListener {
 }
 
 impl UserLoginListener {
+    unsafe extern "system" fn on_logon_handler(
+        action: EVT_SUBSCRIBE_NOTIFY_ACTION,
+        context: *const std::ffi::c_void,
+        _handle: EVT_HANDLE,
+    ) -> u32 {
+        match action {
+            EventLog::EvtSubscribeActionDeliver => {
+                let wait_handle = context as *const HANDLE;
+                let result = SetEvent(*wait_handle);
+                if !result.as_bool() {
+                    LOGGER.debug_log("Could not set wait event!");
+                }
+            }
+            _ => (),
+        }
+        return 0;
+    }
+
     pub fn wait_for_login(&self) {
         LOGGER.debug_log("Waiting for user login...");
         let result = unsafe { WaitForSingleObject(self.wait_event, INFINITE) };
@@ -46,9 +64,9 @@ impl UserLoginListener {
                 &path,
                 &query,
                 None,
-                None,
-                None,
-                EvtSubscribeToFutureEvents.0,
+                Some(std::ptr::addr_of!(wait_event) as *const std::ffi::c_void),
+                Some(Self::on_logon_handler),
+                EventLog::EvtSubscribeToFutureEvents.0,
             )?
         };
         if wait_subscription.is_invalid() {
