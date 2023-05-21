@@ -84,6 +84,7 @@ impl UserLoginListener {
 
 impl Drop for UserLoginListener {
     fn drop(&mut self) {
+        LOGGER.debug_log("Dropping user login listener");
         unsafe {
             CloseHandle(self.wait_event);
             EvtClose(self.wait_subscription);
