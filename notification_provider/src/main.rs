@@ -47,7 +47,7 @@ fn read_notification_command(input: &Pipe<Client, Read>) -> Result<NotificationC
 }
 
 fn wait_for_input() -> Result<()> {
-    let input = Pipe::create_client(PIPE_NAME)
+    let input = Pipe::create_client_retrying(PIPE_NAME)
         .map_err(|e| format!("Could not create client pipe!\n{}", e))?;
     LOGGER.debug_log("notification_provider: waiting for input...");
     loop {

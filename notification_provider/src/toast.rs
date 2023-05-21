@@ -19,7 +19,7 @@ impl<'a> Toast<'a> {
 
     fn create_notifcation(&self) -> Result<ToastNotification> {
         let toast_xml =
-            ToastNotificationManager::GetTemplateContent(ToastTemplateType::ToastText02)
+            ToastNotificationManager::GetTemplateContent(ToastTemplateType::ToastText01)
                 .map_err(|e| format!("Could not get template content!\n{}", e))?;
 
         let string_elems = toast_xml
