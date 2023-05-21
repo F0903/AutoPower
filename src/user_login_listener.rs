@@ -9,8 +9,8 @@ use windows::Win32::{
 
 type Result<T> = std::result::Result<T, Box<dyn std::error::Error>>;
 
-const EVENT_SUBSCRIBE_PATH: &str = "Security";
-const EVENT_SUBSCRIBE_QUERY: &str = "Event/System[EventID=4624]";
+const EVENT_SUBSCRIBE_PATH: &str = "System";
+const EVENT_SUBSCRIBE_QUERY: &str = "Event/System[EventID=7001]";
 
 const LOGGER: Logger = Logger::new("user_logon_listener", "autopower");
 
@@ -34,6 +34,9 @@ impl UserLoginListener {
     pub fn new() -> Result<Self> {
         let path = to_h_string(EVENT_SUBSCRIBE_PATH)?;
         let query = to_h_string(EVENT_SUBSCRIBE_QUERY)?;
+
+        println!("{}", path.to_string());
+        println!("{}", path.to_string());
 
         let wait_event = unsafe { CreateEventW(None, false, false, None)? };
         let wait_subscription = unsafe {
