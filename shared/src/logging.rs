@@ -1,8 +1,14 @@
+#[cfg(debug_assertions)]
 use once_cell::unsync::{Lazy, OnceCell};
-use std::{fmt::Display, io::Write, ops::Deref, path::PathBuf, str::FromStr};
+#[cfg(debug_assertions)]
+use std::{io::Write, ops::Deref, path::PathBuf, str::FromStr};
 
+use std::fmt::Display;
+
+#[cfg(debug_assertions)]
 const TEMP_PATH: &str = std::env!("TEMP");
 
+#[cfg(debug_assertions)]
 pub struct Logger {
     source_name: &'static str,
     process_name: &'static str,
@@ -10,6 +16,7 @@ pub struct Logger {
     log_path: OnceCell<PathBuf>,
 }
 
+#[cfg(debug_assertions)]
 impl Logger {
     pub const fn new(source_name: &'static str, process_name: &'static str) -> Self {
         let log_root: Lazy<PathBuf> = Lazy::new(|| {
@@ -55,4 +62,16 @@ impl Logger {
         file.write_all(msg.as_bytes())
             .expect("Could not write to log file!");
     }
+}
+
+#[cfg(not(debug_assertions))]
+pub struct Logger;
+
+#[cfg(not(debug_assertions))]
+impl Logger {
+    pub const fn new(_source_name: &'static str, _process_name: &'static str) -> Self {
+        Self {}
+    }
+
+    pub fn debug_log<A: Display>(&self, _input: A) {}
 }
