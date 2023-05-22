@@ -17,11 +17,13 @@ repository.workspace = true
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [profile.release]
-strip = true
+# Optimize for size. Speed isn't that important for this.
+strip = true        # Remember to set this to false for inspecting asm or such
 opt-level = "z"
 lto = true
 panic = "abort"
-incremental = true
+incremental = false
+codegen-units = 1
 
 [dependencies]
 autopower_shared = { path = "shared" }
@@ -37,10 +39,8 @@ windows = { version = "0.48", features = [
     "Win32_System_Services",
     "Win32_System_Threading",
     "Win32_System_SystemServices",
-    "Win32_System_RemoteDesktop",
     "Win32_System_Pipes",
     "Win32_Storage_FileSystem",
     "Win32_System_IO",
     "Win32_System_Diagnostics_Debug",
-    "Win32_System_EventLog",
 ] }
