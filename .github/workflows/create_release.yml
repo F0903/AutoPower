@@ -33,5 +33,4 @@ jobs:
         files: |
           target/release/autopower.exe
           target/release/autopower_notification_provider.exe
-          target/release/install_service.ps1
-          target/release/uninstall_service.ps1
+          target/release/*.ps1
