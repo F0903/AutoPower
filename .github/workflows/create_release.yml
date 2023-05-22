@@ -27,7 +27,7 @@ jobs:
       run: echo "::set-output name=version::$(.\target\release\autopower.exe version)"
       id: version
     - name: Zip files
-      run: Get-ChildItem .\* -Include "*.exe","*.ps1" | Compress-Archive -DestinationPath ".\release.zip"
+      run: Get-ChildItem .\target\release\* -Include "*.exe","*.ps1" | Compress-Archive -DestinationPath ".\release.zip"
     - name: Create release
       uses: softprops/action-gh-release@v1
       with:
