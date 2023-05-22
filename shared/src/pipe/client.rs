@@ -19,18 +19,21 @@ pub struct Client;
 
 impl<S: HandleStreamMode> Pipe<Client, S> {
     pub fn create_client_retrying(name: &str) -> Result<Self> {
+        let mut first_error = None;
         for _ in 0..RETRYING_ATTEMPTS {
             match Self::create_client(name) {
                 Ok(x) => return Ok(x),
-                Err(_) => {
+                Err(e) => {
+                    if let None = first_error {
+                        first_error = Some(e);
+                    }
                     std::thread::sleep(std::time::Duration::from_millis(RETRYING_DELAY as u64));
                 }
             }
         }
-        let err = get_last_win32_err()?;
         Err(format!(
             "Could not connect client after several attempts...\n{}",
-            err
+            first_error.unwrap_or_else(|| "No error set...".into())
         )
         .into())
     }

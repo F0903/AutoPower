@@ -1,18 +1,57 @@
-use super::{Pipe, Result, PIPE_BUFFER_SIZE, PIPE_PATH_ROOT};
+use super::{Pipe, Result, LOGGER, PIPE_BUFFER_SIZE, PIPE_PATH_ROOT};
 use crate::{
     stream::{HandleStream, HandleStreamMode},
     util::get_last_win32_err,
     winstr::to_win32_wstr,
 };
 use windows::Win32::{
+    Security::{
+        InitializeSecurityDescriptor, SetSecurityDescriptorDacl, PSECURITY_DESCRIPTOR,
+        SECURITY_ATTRIBUTES, SECURITY_DESCRIPTOR,
+    },
     Storage::FileSystem::FILE_FLAG_FIRST_PIPE_INSTANCE,
-    System::Pipes::{ConnectNamedPipe, CreateNamedPipeW, PIPE_READMODE_MESSAGE, PIPE_TYPE_MESSAGE},
+    System::{
+        Pipes::{ConnectNamedPipe, CreateNamedPipeW, PIPE_READMODE_MESSAGE, PIPE_TYPE_MESSAGE},
+        SystemServices::SECURITY_DESCRIPTOR_REVISION,
+    },
 };
 
 pub struct Server;
 
 impl<S: HandleStreamMode> Pipe<Server, S> {
+    fn get_security_descriptor() -> Result<SECURITY_DESCRIPTOR> {
+        let mut security_desc = SECURITY_DESCRIPTOR::default();
+        let p_security_desc =
+            PSECURITY_DESCRIPTOR(std::ptr::addr_of_mut!(security_desc) as *mut std::ffi::c_void);
+
+        LOGGER.debug_log(format!("{:?}", security_desc));
+        unsafe {
+            let result =
+                InitializeSecurityDescriptor(p_security_desc, SECURITY_DESCRIPTOR_REVISION);
+            if !result.as_bool() {
+                let err = get_last_win32_err()?;
+                return Err(format!("Could not init security descriptor!\n{}", err).into());
+            }
+
+            let result = SetSecurityDescriptorDacl(p_security_desc, true, None, false);
+            if !result.as_bool() {
+                let err = get_last_win32_err()?;
+                return Err(format!("Could not set security descriptor dacl!\n{}", err).into());
+            }
+        }
+        LOGGER.debug_log(format!("{:?}", security_desc));
+
+        Ok(security_desc)
+    }
+
     pub fn create_server(name: &str) -> Result<Self> {
+        let mut security_desc = Self::get_security_descriptor()?;
+        let security = SECURITY_ATTRIBUTES {
+            nLength: std::mem::size_of::<SECURITY_ATTRIBUTES>() as u32,
+            bInheritHandle: true.into(),
+            lpSecurityDescriptor: std::ptr::addr_of_mut!(security_desc) as *mut std::ffi::c_void,
+        };
+
         let pipe_name = to_win32_wstr(&format!("{}{}", PIPE_PATH_ROOT, name));
         let pipe = unsafe {
             CreateNamedPipeW(
@@ -23,7 +62,7 @@ impl<S: HandleStreamMode> Pipe<Server, S> {
                 PIPE_BUFFER_SIZE,
                 PIPE_BUFFER_SIZE,
                 0,
-                None,
+                Some(&security),
             )
         };
         if pipe.is_invalid() {
