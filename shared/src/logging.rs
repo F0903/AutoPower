@@ -38,11 +38,7 @@ impl Logger {
     }
 
     pub fn log<A: Display>(&self, input: A, level: LogLevel) {
-        if level < LOG_LEVEL {
-            return;
-        }
-
-        self.log_path.get_or_init(|| {
+        let log_path = self.log_path.get_or_init(|| {
             let mut log_root = PathBuf::from_str(TEMP_PATH).expect("Could not get debug path!");
             log_root.push("autopower\\");
             std::fs::create_dir_all(&log_root).unwrap();
@@ -53,12 +49,16 @@ impl Logger {
             log_path
         });
 
+        if level < LOG_LEVEL {
+            return;
+        }
+
         let mut file = std::fs::File::options()
             .write(true)
             .append(true)
             .create(true)
             .read(true)
-            .open(self.log_path.get().unwrap())
+            .open(log_path)
             .expect("Could not open log file!");
 
         let time_now = time::OffsetDateTime::now_utc();
