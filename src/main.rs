@@ -238,6 +238,7 @@ fn service_setup() -> Result<()> {
 }
 
 fn main() -> Result<()> {
+    LOGGER.debug_log("Starting...");
     let mut args = std::env::args();
     if let Some(cmd) = args.nth(1) {
         match cmd.as_str() {

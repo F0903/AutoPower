@@ -27,6 +27,7 @@ impl<S: HandleStreamMode> Pipe<Client, S> {
                     if let None = first_error {
                         first_error = Some(e);
                     }
+                    LOGGER.debug_log(format!("Got connection error:\n{}", e));
                     std::thread::sleep(std::time::Duration::from_millis(RETRYING_DELAY as u64));
                 }
             }

@@ -69,6 +69,7 @@ fn run() -> Result<()> {
 }
 
 fn main() -> Result<()> {
+    LOGGER.debug_log("Starting notification provider...");
     std::panic::set_hook(Box::new(|info| {
         LOGGER.debug_log(info);
     }));
