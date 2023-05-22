@@ -1,0 +1,16 @@
+{
+  "version": "2.0.0",
+  "tasks": [
+    {
+      "type": "cargo",
+      "command": "build",
+      "args": ["--release", "--workspace"],
+      "problemMatcher": ["$rustc", "$rust-panic"],
+      "group": {
+        "kind": "build",
+        "isDefault": true
+      },
+      "label": "Cargo Build Release Workspace"
+    }
+  ]
+}
