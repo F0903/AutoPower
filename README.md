@@ -19,8 +19,5 @@ Important to build with the command `cargo build --release --workspace` so all b
 
 ## Uninstallation
 
-Open the directory where you placed the service executable, here you should have saved the provided scripts from the Installation step.
-Then just run the uninstall_service.ps1 script. Note that a restart might be required to completely remove it.
+Open the directory where you placed the service executable, then just run the uninstall_service.ps1 script. Note that a restart might be required to completely remove it.
 Afterwards you can delete the directory.
-
-If you did not save the installation scripts, open a PowerShell session with Admin rights. Then just type `sc.exe delete AutoPower` and follow as above.
