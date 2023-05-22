@@ -31,6 +31,5 @@ jobs:
       with:
         tag_name: ${{ steps.Version.outputs.version }}
         files: |
-          target/release/autopower.exe
-          target/release/autopower_notification_provider.exe
+          target/release/*.exe
           target/release/*.ps1
