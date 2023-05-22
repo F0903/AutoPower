@@ -1,21 +1,25 @@
 use windows::core::{HSTRING, PCWSTR, PWSTR};
 
 pub struct Win32StrPtr<T> {
-    data: Vec<T>,
-    len: usize,
+    _data: Vec<T>,
+    ptr: *const T,
 }
 
 impl Win32StrPtr<u16> {
     pub fn get_mut(&mut self) -> PWSTR {
-        PWSTR(self.data[..self.len].as_mut_ptr())
+        PWSTR(self.ptr as *mut u16)
     }
 
     pub fn get_const(&self) -> PCWSTR {
-        PCWSTR(self.data[..self.len].as_ptr())
+        PCWSTR(self.ptr)
     }
 
     pub fn from_buffer(data: Vec<u16>, length: usize) -> Self {
-        Self { data, len: length }
+        let str_ptr = data[..length].as_ptr();
+        Self {
+            _data: data,
+            ptr: str_ptr,
+        }
     }
 }
 
