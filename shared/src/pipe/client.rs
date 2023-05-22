@@ -24,7 +24,7 @@ impl<S: HandleStreamMode> Pipe<Client, S> {
             match Self::create_client(name) {
                 Ok(x) => return Ok(x),
                 Err(e) => {
-                    LOGGER.debug_log(format!("Got connection error:\n{}", e));
+                    LOGGER.error(format!("Got connection error:\n{}", e));
                     if let None = first_error {
                         first_error = Some(e);
                     }
@@ -42,7 +42,7 @@ impl<S: HandleStreamMode> Pipe<Client, S> {
     pub fn create_client(name: &str) -> Result<Self> {
         let pipe_name = to_win32_wstr(&format!("{}{}", PIPE_PATH_ROOT, name));
         let access_rights = S::as_generic_access_rights();
-        LOGGER.debug_log(format!(
+        LOGGER.debug(format!(
             "Got following access rights for client pipe: {}",
             access_rights
         ));

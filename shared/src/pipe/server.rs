@@ -1,4 +1,4 @@
-use super::{Pipe, Result, LOGGER, PIPE_BUFFER_SIZE, PIPE_PATH_ROOT};
+use super::{Pipe, Result, PIPE_BUFFER_SIZE, PIPE_PATH_ROOT};
 use crate::{
     stream::{HandleStream, HandleStreamMode},
     util::get_last_win32_err,
@@ -24,7 +24,6 @@ impl<S: HandleStreamMode> Pipe<Server, S> {
         let p_security_desc =
             PSECURITY_DESCRIPTOR(std::ptr::addr_of_mut!(security_desc) as *mut std::ffi::c_void);
 
-        LOGGER.debug_log(format!("{:?}", security_desc));
         unsafe {
             let result =
                 InitializeSecurityDescriptor(p_security_desc, SECURITY_DESCRIPTOR_REVISION);
@@ -39,7 +38,6 @@ impl<S: HandleStreamMode> Pipe<Server, S> {
                 return Err(format!("Could not set security descriptor dacl!\n{}", err).into());
             }
         }
-        LOGGER.debug_log(format!("{:?}", security_desc));
 
         Ok(security_desc)
     }

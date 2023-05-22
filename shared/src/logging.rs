@@ -1,42 +1,52 @@
-#[cfg(debug_assertions)]
-use once_cell::unsync::{Lazy, OnceCell};
-#[cfg(debug_assertions)]
-use std::{io::Write, ops::Deref, path::PathBuf, str::FromStr};
+use once_cell::unsync::OnceCell;
+use std::{fmt::Display, io::Write, path::PathBuf, str::FromStr};
 
-use std::fmt::Display;
-
-#[cfg(debug_assertions)]
 const TEMP_PATH: &str = std::env!("TEMP");
 
 #[cfg(debug_assertions)]
+const LOG_LEVEL: LogLevel = LogLevel::Debug;
+#[cfg(not(debug_assertions))]
+const LOG_LEVEL: LogLevel = LogLevel::Error;
+
+#[derive(PartialEq, PartialOrd)]
+pub enum LogLevel {
+    Debug,
+    Error,
+}
+
 pub struct Logger {
     source_name: &'static str,
     process_name: &'static str,
-    log_root: Lazy<PathBuf>,
     log_path: OnceCell<PathBuf>,
 }
 
-#[cfg(debug_assertions)]
 impl Logger {
     pub const fn new(source_name: &'static str, process_name: &'static str) -> Self {
-        let log_root: Lazy<PathBuf> = Lazy::new(|| {
-            let mut log_root = PathBuf::from_str(TEMP_PATH).expect("Could not get debug path!");
-            log_root.push("autopower\\");
-            log_root
-        });
-
         Self {
             source_name,
             process_name,
-            log_root,
             log_path: OnceCell::new(),
         }
     }
 
-    pub fn debug_log<A: Display>(&self, input: A) {
-        std::fs::create_dir_all(self.log_root.deref()).unwrap();
+    pub fn error<A: Display>(&self, input: A) {
+        self.log(input, LogLevel::Error);
+    }
+
+    pub fn debug<A: Display>(&self, input: A) {
+        self.log(input, LogLevel::Debug);
+    }
+
+    pub fn log<A: Display>(&self, input: A, level: LogLevel) {
+        if level < LOG_LEVEL {
+            return;
+        }
 
         self.log_path.get_or_init(|| {
+            let mut log_root = PathBuf::from_str(TEMP_PATH).expect("Could not get debug path!");
+            log_root.push("autopower\\");
+            std::fs::create_dir_all(&log_root).unwrap();
+
             let mut log_path = PathBuf::from_str(TEMP_PATH).expect("Could not get debug path!");
             log_path.push("autopower\\");
             log_path.push(format!("log_{}.txt", self.process_name));
@@ -62,16 +72,4 @@ impl Logger {
         file.write_all(msg.as_bytes())
             .expect("Could not write to log file!");
     }
-}
-
-#[cfg(not(debug_assertions))]
-pub struct Logger;
-
-#[cfg(not(debug_assertions))]
-impl Logger {
-    pub const fn new(_source_name: &'static str, _process_name: &'static str) -> Self {
-        Self {}
-    }
-
-    pub fn debug_log<A: Display>(&self, _input: A) {}
 }

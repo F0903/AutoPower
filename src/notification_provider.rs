@@ -15,15 +15,15 @@ pub struct NotificationProvider {
 
 impl NotificationProvider {
     pub fn create() -> Result<Self> {
-        LOGGER.debug_log("Creating pipe...");
+        LOGGER.debug("Creating pipe...");
         let pipe = Pipe::create_server(PIPE_NAME)?;
-        LOGGER.debug_log("Created pipe, waiting for connection...");
+        LOGGER.debug("Created pipe, waiting for connection...");
         pipe.connect()?;
         Ok(NotificationProvider { pipe })
     }
 
     pub fn send_display_command(&self, title: &str, description: &str) -> Result<()> {
-        LOGGER.debug_log(format!("Sent command:\n{} | {}", title, description));
+        LOGGER.debug(format!("Sent command:\n{} | {}", title, description));
         let command = NotificationCommand {
             name: "display".to_owned(),
             content: format!("{}\n{}", title, description),
@@ -35,14 +35,14 @@ impl NotificationProvider {
     }
 
     pub fn terminate(&self) {
-        LOGGER.debug_log("Terminating notification provider...");
+        LOGGER.debug("Terminating notification provider...");
         self.pipe.close();
     }
 }
 
 impl Drop for NotificationProvider {
     fn drop(&mut self) {
-        LOGGER.debug_log("Dropping notification provider...");
+        LOGGER.debug("Dropping notification provider...");
         self.terminate();
     }
 }

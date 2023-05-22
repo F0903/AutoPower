@@ -98,7 +98,7 @@ fn handle_power_event(data: HandlerData) {
 }
 
 fn handle_stop() {
-    LOGGER.debug_log("Received stop event... Stopping...");
+    LOGGER.debug("Received stop event... Stopping...");
     if unsafe {
         CURRENT_STATUS
             .ok_or("Current status was not set when stopping!")
@@ -137,7 +137,7 @@ unsafe extern "system" fn service_ctrl_handler(
             std::thread::spawn(|| handle_stop());
         }
         x => {
-            LOGGER.debug_log(format!("Received unknown control code: {}", x));
+            LOGGER.debug(format!("Received unknown control code: {}", x));
         }
     };
     NO_ERROR.0
@@ -146,7 +146,7 @@ unsafe extern "system" fn service_ctrl_handler(
 unsafe extern "system" fn service_main(_arg_num: u32, _args: *mut PWSTR) {
     let service_name = to_win32_wstr(SERVICE_NAME);
 
-    LOGGER.debug_log("Registering service control handler...");
+    LOGGER.debug("Registering service control handler...");
     STATUS_HANDLE = Some(
         match RegisterServiceCtrlHandlerExW(
             service_name.get_const(),
@@ -155,7 +155,7 @@ unsafe extern "system" fn service_main(_arg_num: u32, _args: *mut PWSTR) {
         ) {
             Ok(x) => x,
             Err(e) => {
-                LOGGER.debug_log(format!(
+                LOGGER.error(format!(
                     "Could not register service control handler!\n{}",
                     e
                 ));
@@ -165,25 +165,25 @@ unsafe extern "system" fn service_main(_arg_num: u32, _args: *mut PWSTR) {
     );
 
     if let Err(e) = set_service_status(SERVICE_START_PENDING, None, None) {
-        LOGGER.debug_log(format!("Could not set service status!\n{}", e));
+        LOGGER.error(format!("Could not set service status!\n{}", e));
     }
 
     NOTIFICATION_PROVIDER = Some(match NotificationProvider::create() {
         Ok(x) => x,
         Err(e) => {
-            LOGGER.debug_log(format!("Could not create notification provider!\n{}", e));
+            LOGGER.error(format!("Could not create notification provider!\n{}", e));
             panic!();
         }
     });
-    LOGGER.debug_log("Creation of notification provider successful.");
+    LOGGER.debug("Creation of notification provider successful.");
 
-    LOGGER.debug_log("Registering power setting notification handling...");
+    LOGGER.debug("Registering power setting notification handling...");
     if let Err(e) = RegisterPowerSettingNotification(
         HANDLE(STATUS_HANDLE.unwrap().0),
         &GUID_ACDC_POWER_SOURCE,
         1,
     ) {
-        LOGGER.debug_log(format!(
+        LOGGER.error(format!(
             "Could not register power settings notification!\n{}",
             e
         ));
@@ -192,7 +192,7 @@ unsafe extern "system" fn service_main(_arg_num: u32, _args: *mut PWSTR) {
     STOP_EVENT = Some(match CreateEventW(None, TRUE, FALSE, None) {
         Ok(x) => x,
         Err(err) => {
-            LOGGER.debug_log(format!("Could not create stop event!\n{}", err));
+            LOGGER.error(format!("Could not create stop event!\n{}", err));
             panic!();
         }
     });
@@ -202,26 +202,26 @@ unsafe extern "system" fn service_main(_arg_num: u32, _args: *mut PWSTR) {
         None,
         Some(SERVICE_ACCEPT_STOP | SERVICE_ACCEPT_POWEREVENT),
     ) {
-        LOGGER.debug_log(format!("Could not set service status!\n{}", e));
+        LOGGER.error(format!("Could not set service status!\n{}", e));
     }
 
     // Wait for exit.
     WaitForSingleObject(STOP_EVENT.unwrap(), INFINITE);
-    LOGGER.debug_log("Stop event signaled. Cleaning up and terminating...");
+    LOGGER.debug("Stop event signaled. Cleaning up and terminating...");
     CloseHandle(STOP_EVENT.unwrap());
 
     if let Err(e) = set_service_status(SERVICE_STOPPED, Some(3), None) {
-        LOGGER.debug_log(format!("Could not set service status!\n{}", e));
+        LOGGER.error(format!("Could not set service status!\n{}", e));
     }
     NOTIFICATION_PROVIDER.as_ref().unwrap().terminate();
 }
 
 fn service_setup() -> Result<()> {
     std::panic::set_hook(Box::new(|info| {
-        LOGGER.debug_log(info);
+        LOGGER.error(info);
     }));
 
-    LOGGER.debug_log("Starting setup...");
+    LOGGER.debug("Starting setup...");
     let mut service_name = to_win32_wstr(SERVICE_NAME);
     let service_entry = SERVICE_TABLE_ENTRYW {
         lpServiceName: service_name.get_mut(),
@@ -238,7 +238,7 @@ fn service_setup() -> Result<()> {
 }
 
 fn main() -> Result<()> {
-    LOGGER.debug_log("Starting...");
+    LOGGER.debug("Starting...");
     let mut args = std::env::args();
     if let Some(cmd) = args.nth(1) {
         match cmd.as_str() {

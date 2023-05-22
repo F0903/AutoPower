@@ -41,14 +41,14 @@ impl<M, S: HandleStreamMode> Pipe<M, S> {
     }
 
     pub fn close(&self) {
-        LOGGER.debug_log("Closing pipe...");
+        LOGGER.debug("Closing pipe...");
         self.stream.close();
     }
 }
 
 impl<M, S: HandleStreamMode> Drop for Pipe<M, S> {
     fn drop(&mut self) {
-        LOGGER.debug_log("Dropping pipe...");
+        LOGGER.debug("Dropping pipe...");
         self.close();
     }
 }

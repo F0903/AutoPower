@@ -37,7 +37,7 @@ fn read_notification_command(input: &Pipe<Client, Read>) -> Result<NotificationC
     let input_string = input
         .read()
         .map_err(|e| format!("Could not read input!\n{}", e))?;
-    LOGGER.debug_log(format!(
+    LOGGER.debug(format!(
         "notification_provider: read input:\n{}",
         input_string
     ));
@@ -49,12 +49,12 @@ fn read_notification_command(input: &Pipe<Client, Read>) -> Result<NotificationC
 fn wait_for_input() -> Result<()> {
     let input = Pipe::create_client_retrying(PIPE_NAME)
         .map_err(|e| format!("Could not create client pipe!\n{}", e))?;
-    LOGGER.debug_log("notification_provider: waiting for input...");
+    LOGGER.debug("notification_provider: waiting for input...");
     loop {
         let command = match read_notification_command(&input) {
             Ok(x) => x,
             Err(e) => {
-                LOGGER.debug_log(format!("Could not read command!\n{}", e));
+                LOGGER.error(format!("Could not read command!\n{}", e));
                 return Err(e);
             }
         };
@@ -69,14 +69,14 @@ fn run() -> Result<()> {
 }
 
 fn main() -> Result<()> {
-    LOGGER.debug_log("Starting notification provider...");
+    LOGGER.debug("Starting notification provider...");
     std::panic::set_hook(Box::new(|info| {
-        LOGGER.debug_log(info);
+        LOGGER.error(info);
     }));
     match run() {
         Ok(_) => (),
         Err(e) => {
-            LOGGER.debug_log(format!("Exited with error!\n{}", e));
+            LOGGER.error(format!("Exited with error!\n{}", e));
         }
     }
     Ok(())
