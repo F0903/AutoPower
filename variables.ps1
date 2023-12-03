@@ -1,4 +1,4 @@
-$Global:ServiceName = 'AutoPower'
+$Global:ServiceName = "AutoPower"
 $Global:Dir = "$($PSScriptRoot)\autopower.exe"
 $Global:NotifierPath = "$($PSScriptRoot)\autopower_notification_provider.exe"
 $Global:NotifierName = "AutoPower Notification Provider"

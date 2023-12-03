@@ -28,7 +28,6 @@ impl NotificationProvider {
             name: "display".to_owned(),
             content: format!("{}\n{}", title, description),
         };
-        let command = bincode::serialize(&command)?;
         self.pipe.write_as(&command)?;
         Ok(())
     }

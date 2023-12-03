@@ -2,7 +2,7 @@
 members = ["shared", "notification_provider"]
 
 [workspace.package]
-version = "2.0.3"
+version = "2.0.4"
 edition = "2021"
 publish = false
 repository = "https://github.com/F0903/AutoPower"

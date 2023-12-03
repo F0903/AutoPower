@@ -218,11 +218,14 @@ unsafe extern "system" fn service_main(_arg_num: u32, _args: *mut PWSTR) {
 
 fn service_setup() -> Result<()> {
     std::panic::set_hook(Box::new(|info| {
-        LOGGER.error(info);
+        LOGGER.error(format!("Fatal panic!\n    {}", info));
     }));
 
     LOGGER.debug("Starting setup...");
     let mut service_name = to_win32_wstr(SERVICE_NAME);
+    LOGGER.debug(format!("Service name is: {}", unsafe {
+        service_name.get_const().display()
+    }));
     let service_entry = SERVICE_TABLE_ENTRYW {
         lpServiceName: service_name.get_mut(),
         lpServiceProc: Some(service_main),
@@ -244,5 +247,8 @@ fn main() -> Result<()> {
         return Ok(());
     }
 
-    service_setup()
+    if let Err(e) = service_setup() {
+        LOGGER.error(format!("Fatal error!\n  {}", e))
+    }
+    Ok(())
 }

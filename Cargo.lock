@@ -4,7 +4,7 @@ version = 3
 
 [[package]]
 name = "autopower"
-version = "2.0.3"
+version = "2.0.4"
 dependencies = [
  "autopower_shared",
  "bincode",
@@ -13,7 +13,7 @@ dependencies = [
 
 [[package]]
 name = "autopower_notification_provider"
-version = "2.0.3"
+version = "2.0.4"
 dependencies = [
  "autopower_shared",
  "bincode",
@@ -23,7 +23,7 @@ dependencies = [
 
 [[package]]
 name = "autopower_shared"
-version = "2.0.3"
+version = "2.0.4"
 dependencies = [
  "bincode",
  "once_cell",

@@ -15,6 +15,9 @@ fn copy_powershell_scripts() -> Result<()> {
             continue;
         }
 
+        #[cfg(debug_assertions)]
+        std::fs::copy(file.path(), format!("./target/debug/{}", file_name_str))?;
+        #[cfg(not(debug_assertions))]
         std::fs::copy(file.path(), format!("./target/release/{}", file_name_str))?;
     }
     Ok(())
