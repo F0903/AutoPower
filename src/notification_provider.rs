@@ -22,27 +22,26 @@ impl NotificationProvider {
         Ok(NotificationProvider { pipe })
     }
 
-    pub fn send_display_command(&self, title: &str, description: &str) -> Result<()> {
+    pub fn send_display_command(&mut self, title: &str, description: &str) -> Result<()> {
         LOGGER.debug(format!("Sent command:\n{} | {}", title, description));
         let command = NotificationCommand {
             name: "display".to_owned(),
             content: format!("{}\n{}", title, description),
         };
-        let mut command_str = serde_json::to_string(&command)?;
-        command_str.push('\n');
-        self.pipe.write(command_str.as_bytes())?;
+        let command = bincode::serialize(&command)?;
+        self.pipe.write_as(&command)?;
         Ok(())
     }
 
-    pub fn terminate(&self) {
+    pub fn terminate(&self) -> Result<()> {
         LOGGER.debug("Terminating notification provider...");
-        self.pipe.close();
+        self.pipe.close()
     }
 }
 
 impl Drop for NotificationProvider {
     fn drop(&mut self) {
         LOGGER.debug("Dropping notification provider...");
-        self.terminate();
+        self.terminate().unwrap();
     }
 }

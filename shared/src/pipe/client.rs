@@ -62,12 +62,7 @@ impl<S: HandleStreamMode> Pipe<Client, S> {
             return Err(format!("Could not open pipe!\n{}", err).into());
         }
 
-        let result =
-            unsafe { SetNamedPipeHandleState(pipe, Some(&PIPE_READMODE_MESSAGE), None, None) };
-        if !result.as_bool() {
-            let err = get_last_win32_err()?;
-            return Err(format!("Could not set handle state!\n{}", err).into());
-        }
+        unsafe { SetNamedPipeHandleState(pipe, Some(&PIPE_READMODE_MESSAGE), None, None)? };
 
         Ok(Self {
             stream: HandleStream::create(pipe),

@@ -29,8 +29,8 @@ impl PowerScheme {
 
 pub fn set_power_scheme(scheme: PowerScheme) -> Result<()> {
     unsafe {
-        PowerSetActiveScheme(None, Some(&scheme.to_guid()));
-        if let Some(notifications) = &NOTIFICATION_PROVIDER {
+        PowerSetActiveScheme(None, Some(&scheme.to_guid()))?;
+        if let Some(notifications) = &mut NOTIFICATION_PROVIDER {
             notifications
                 .send_display_command(
                     SERVICE_NAME,

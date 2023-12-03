@@ -9,7 +9,7 @@ use windows::Win32::{
     Storage::FileSystem::FILE_FLAGS_AND_ATTRIBUTES,
 };
 
-type Result<T> = std::result::Result<T, Box<dyn std::error::Error>>;
+use crate::Result;
 
 pub trait HandleStreamMode {
     fn as_generic_access_rights() -> u32;
@@ -33,15 +33,14 @@ impl<M: HandleStreamMode> HandleStream<M> {
         }
     }
 
-    pub fn close(&self) {
-        unsafe {
-            CloseHandle(self.handle);
-        }
+    pub fn close(&self) -> Result<()> {
+        unsafe { CloseHandle(self.handle)? };
+        Ok(())
     }
 }
 
 impl<M: HandleStreamMode> Drop for HandleStream<M> {
     fn drop(&mut self) {
-        self.close()
+        self.close().unwrap();
     }
 }

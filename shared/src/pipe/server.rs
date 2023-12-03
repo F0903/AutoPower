@@ -25,18 +25,8 @@ impl<S: HandleStreamMode> Pipe<Server, S> {
             PSECURITY_DESCRIPTOR(std::ptr::addr_of_mut!(security_desc) as *mut std::ffi::c_void);
 
         unsafe {
-            let result =
-                InitializeSecurityDescriptor(p_security_desc, SECURITY_DESCRIPTOR_REVISION);
-            if !result.as_bool() {
-                let err = get_last_win32_err()?;
-                return Err(format!("Could not init security descriptor!\n{}", err).into());
-            }
-
-            let result = SetSecurityDescriptorDacl(p_security_desc, true, None, false);
-            if !result.as_bool() {
-                let err = get_last_win32_err()?;
-                return Err(format!("Could not set security descriptor dacl!\n{}", err).into());
-            }
+            InitializeSecurityDescriptor(p_security_desc, SECURITY_DESCRIPTOR_REVISION)?;
+            SetSecurityDescriptorDacl(p_security_desc, true, None, false)?;
         }
 
         Ok(security_desc)
@@ -75,11 +65,7 @@ impl<S: HandleStreamMode> Pipe<Server, S> {
     }
 
     pub fn connect(&self) -> Result<()> {
-        let result = unsafe { ConnectNamedPipe(self.stream.get_raw_handle(), None) };
-        if !result.as_bool() {
-            let err = get_last_win32_err()?;
-            return Err(format!("Could not connect named pipe!\n{}", err).into());
-        }
+        unsafe { ConnectNamedPipe(self.stream.get_raw_handle(), None)? };
         Ok(())
     }
 }

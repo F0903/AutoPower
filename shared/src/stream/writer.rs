@@ -1,5 +1,4 @@
 use super::{HandleStream, HandleStreamMode};
-use crate::util::get_last_win32_err;
 use windows::Win32::{
     Foundation::GENERIC_WRITE,
     Storage::FileSystem::{WriteFile, PIPE_ACCESS_OUTBOUND},
@@ -16,14 +15,16 @@ impl HandleStreamMode for Write {
     }
 }
 
-impl HandleStream<Write> {
-    pub fn write(&self, input: &[u8]) -> super::Result<()> {
+impl HandleStream<Write> {}
+
+impl std::io::Write for HandleStream<Write> {
+    fn write(&mut self, buf: &[u8]) -> std::io::Result<usize> {
         let mut bytes_written = 0;
-        let result = unsafe { WriteFile(self.handle, Some(input), Some(&mut bytes_written), None) };
-        if !result.as_bool() {
-            let err = get_last_win32_err()?;
-            return Err(format!("Could not write to ouput pipe!\n{}", err).into());
-        }
+        unsafe { WriteFile(self.handle, Some(buf), Some(&mut bytes_written), None)? };
+        Ok(bytes_written as usize)
+    }
+
+    fn flush(&mut self) -> std::io::Result<()> {
         Ok(())
     }
 }

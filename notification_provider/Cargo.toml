@@ -9,9 +9,8 @@ repository.workspace = true
 
 [dependencies]
 autopower_shared = { path = "../shared" }
-serde = { version = "^1.0", features = ["derive"] }
-serde_json = "^1.0"
-windows = { version = "0.48", features = [
+bincode = { workspace = true }
+windows = { workspace = true, features = [
     "Foundation",
     "UI_Notifications",
     "Data_Xml_Dom",
@@ -22,3 +21,4 @@ windows = { version = "0.48", features = [
     "Win32_System_Com",
     "Win32_System_Console",
 ] }
+serde = { workspace = true }

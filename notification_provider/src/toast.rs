@@ -1,7 +1,6 @@
 use autopower_shared::winstr::to_h_string;
 use windows::{
     core::HSTRING,
-    h,
     UI::Notifications::{ToastNotification, ToastNotificationManager, ToastTemplateType},
 };
 
@@ -23,7 +22,7 @@ impl<'a> Toast<'a> {
                 .map_err(|e| format!("Could not get template content!\n{}", e))?;
 
         let string_elems = toast_xml
-            .GetElementsByTagName(h!("text"))
+            .GetElementsByTagName(&"text".into())
             .map_err(|e| format!("Could not get elements by tag name!\n{}", e))?;
 
         for i in 0..string_elems.Length()? {

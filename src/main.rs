@@ -8,7 +8,7 @@ use std::ffi::c_void;
 use windows::{
     core::PWSTR,
     Win32::{
-        Foundation::{CloseHandle, GetLastError, FALSE, HANDLE, NO_ERROR, TRUE},
+        Foundation::{CloseHandle, FALSE, HANDLE, NO_ERROR, TRUE},
         System::{
             Power::{
                 self, RegisterPowerSettingNotification, POWERBROADCAST_SETTING,
@@ -59,7 +59,7 @@ fn set_service_status(
         ..Default::default()
     };
     unsafe {
-        SetServiceStatus(STATUS_HANDLE.ok_or("STATUS_HANDLE was not set!")?, &status);
+        SetServiceStatus(STATUS_HANDLE.ok_or("STATUS_HANDLE was not set!")?, &status).unwrap();
         CURRENT_STATUS = Some(status);
     }
     Ok(())
@@ -113,7 +113,7 @@ fn handle_stop() {
     set_service_status(SERVICE_STOP_PENDING, Some(4), None)
         .map_err(|_| "Could not set service status!")
         .unwrap();
-    unsafe { SetEvent(STOP_EVENT.ok_or("Stop event was not created!").unwrap()) };
+    unsafe { SetEvent(STOP_EVENT.ok_or("Stop event was not created!").unwrap()).unwrap() };
 }
 
 unsafe extern "system" fn service_ctrl_handler(
@@ -134,7 +134,7 @@ unsafe extern "system" fn service_ctrl_handler(
             });
         }
         SERVICE_CONTROL_STOP => {
-            std::thread::spawn(|| handle_stop());
+            std::thread::spawn(handle_stop);
         }
         x => {
             LOGGER.debug(format!("Received unknown control code: {}", x));
@@ -208,12 +208,12 @@ unsafe extern "system" fn service_main(_arg_num: u32, _args: *mut PWSTR) {
     // Wait for exit.
     WaitForSingleObject(STOP_EVENT.unwrap(), INFINITE);
     LOGGER.debug("Stop event signaled. Cleaning up and terminating...");
-    CloseHandle(STOP_EVENT.unwrap());
+    CloseHandle(STOP_EVENT.unwrap()).unwrap();
 
     if let Err(e) = set_service_status(SERVICE_STOPPED, Some(3), None) {
         LOGGER.error(format!("Could not set service status!\n{}", e));
     }
-    NOTIFICATION_PROVIDER.as_ref().unwrap().terminate();
+    NOTIFICATION_PROVIDER.as_ref().unwrap().terminate().unwrap();
 }
 
 fn service_setup() -> Result<()> {
@@ -228,11 +228,7 @@ fn service_setup() -> Result<()> {
         lpServiceProc: Some(service_main),
     };
 
-    let start_success = unsafe { StartServiceCtrlDispatcherW(&service_entry) };
-    if !start_success.as_bool() {
-        let err = unsafe { GetLastError() };
-        println!("Could not start service!\n{}", err.ok().unwrap_err());
-    }
+    unsafe { StartServiceCtrlDispatcherW(&service_entry)? };
 
     Ok(())
 }

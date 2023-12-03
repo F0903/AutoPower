@@ -2,7 +2,7 @@
 
 Assert-Admin($MyInvocation.MyCommand.Definition)
 
-sc.exe create $ServiceName binPath=$Dir start=auto
+sc.exe create $ServiceName binPath=$Dir start=auto displayname=$ServiceName
 New-ItemProperty -Path "HKLM:\SOFTWARE\Microsoft\Windows\CurrentVersion\Run" -Name $NotifierName -Value $NotifierPath -PropertyType "String" -ErrorAction Stop
 
 & "$($PSScriptRoot)\start_service.ps1"

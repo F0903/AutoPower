@@ -33,25 +33,18 @@ fn execute_command(command: NotificationCommand) -> Result<()> {
     }
 }
 
-fn read_notification_command(input: &Pipe<Client, Read>) -> Result<NotificationCommand> {
-    let input_string = input
-        .read()
-        .map_err(|e| format!("Could not read input!\n{}", e))?;
-    LOGGER.debug(format!(
-        "notification_provider: read input:\n{}",
-        input_string
-    ));
-    let object = serde_json::from_str::<NotificationCommand>(&input_string)
-        .map_err(|e| format!("Could not convert string to command!\n{}", e))?;
+fn read_notification_command(input: &mut Pipe<Client, Read>) -> Result<NotificationCommand> {
+    LOGGER.debug(format!("notification_provider: got input"));
+    let object = input.read_to()?;
     Ok(object)
 }
 
 fn wait_for_input() -> Result<()> {
-    let input = Pipe::create_client_retrying(PIPE_NAME)
+    let mut input = Pipe::create_client_retrying(PIPE_NAME)
         .map_err(|e| format!("Could not create client pipe!\n{}", e))?;
     LOGGER.debug("notification_provider: waiting for input...");
     loop {
-        let command = match read_notification_command(&input) {
+        let command = match read_notification_command(&mut input) {
             Ok(x) => x,
             Err(e) => {
                 LOGGER.error(format!("Could not read command!\n{}", e));
