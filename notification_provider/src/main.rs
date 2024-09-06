@@ -56,7 +56,11 @@ fn wait_for_input() -> Result<()> {
 }
 
 fn run() -> Result<()> {
-    unsafe { CoInitialize(None).map_err(|e| format!("Could not init COM!\n{}", e))? };
+    unsafe {
+        CoInitialize(None)
+            .ok()
+            .map_err(|e| format!("Could not init COM!\n{}", e))?
+    };
     wait_for_input().map_err(|e| format!("Error occured while waiting for input!\n{}", e))?;
     Ok(())
 }

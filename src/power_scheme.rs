@@ -1,11 +1,14 @@
-use crate::{NOTIFICATION_PROVIDER, SERVICE_NAME};
+use serde::{Deserialize, Serialize};
 use windows::Win32::System::{
     Power::PowerSetActiveScheme,
     SystemServices::{GUID_MIN_POWER_SAVINGS, GUID_TYPICAL_POWER_SAVINGS},
 };
 
+use crate::notification_provider::NotificationProvider;
+
 type Result<T> = std::result::Result<T, Box<dyn std::error::Error>>;
 
+#[derive(Serialize, Deserialize, Debug, Clone, Copy)]
 pub enum PowerScheme {
     HighPerformance,
     Balanced,
@@ -27,17 +30,13 @@ impl PowerScheme {
     }
 }
 
-pub fn set_power_scheme(scheme: PowerScheme) -> Result<()> {
+pub fn set_power_scheme(scheme: PowerScheme, provider: &mut NotificationProvider) -> Result<()> {
     unsafe {
-        PowerSetActiveScheme(None, Some(&scheme.to_guid()))?;
-        if let Some(notifications) = &mut NOTIFICATION_PROVIDER {
-            notifications
-                .send_display_command(
-                    SERVICE_NAME,
-                    &format!("Switching to {}.", scheme.get_name()),
-                )
-                .map_err(|e| format!("Could not send notification!\n{}", e))?;
-        }
+        PowerSetActiveScheme(None, Some(&scheme.to_guid())).ok()?;
+        // Cannot create variable with mut ref to static mutable, so use this instead.
+        provider
+            .send_display_command("AutoPower", &format!("Switching to {}.", scheme.get_name()))
+            .map_err(|e| format!("Could not send notification!\n{}", e))?;
     }
     Ok(())
 }

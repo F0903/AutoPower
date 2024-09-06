@@ -7,14 +7,14 @@ use windows::{
 };
 
 pub fn get_last_win32_err() -> super::Result<String> {
-    let err = unsafe { GetLastError().unwrap_err() };
+    let err = unsafe { GetLastError().0 };
     const BUF_SIZE: usize = 128;
     let buf: PWSTR = PWSTR::from_raw([0; BUF_SIZE + 1].as_mut_ptr());
     let count = unsafe {
         FormatMessageW(
             FORMAT_MESSAGE_FROM_SYSTEM,
             None,
-            err.code().0 as u32,
+            err,
             0,
             buf,
             BUF_SIZE as u32,
