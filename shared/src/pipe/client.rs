@@ -13,7 +13,7 @@ use windows::Win32::{
 };
 
 const RETRYING_DELAY: u32 = 1000;
-const RETRYING_ATTEMPTS: u32 = 10;
+const RETRYING_ATTEMPTS: u32 = 30;
 
 pub struct Client;
 

@@ -1,4 +1,4 @@
-use super::{Pipe, Result, PIPE_BUFFER_SIZE, PIPE_PATH_ROOT};
+use super::{Pipe, Result, PIPE_PATH_ROOT};
 use crate::{
     stream::{HandleStream, HandleStreamMode},
     util::get_last_win32_err,
@@ -16,13 +16,15 @@ use windows::Win32::{
     },
 };
 
+const PIPE_BUFFER_SIZE: u32 = 1024;
+
 pub struct Server;
 
 impl<S: HandleStreamMode> Pipe<Server, S> {
     fn get_security_descriptor() -> Result<SECURITY_DESCRIPTOR> {
         let mut security_desc = SECURITY_DESCRIPTOR::default();
         let p_security_desc =
-            PSECURITY_DESCRIPTOR(std::ptr::addr_of_mut!(security_desc) as *mut std::ffi::c_void);
+            PSECURITY_DESCRIPTOR((&mut security_desc as *mut SECURITY_DESCRIPTOR).cast());
 
         unsafe {
             InitializeSecurityDescriptor(p_security_desc, SECURITY_DESCRIPTOR_REVISION)?;
@@ -37,7 +39,7 @@ impl<S: HandleStreamMode> Pipe<Server, S> {
         let security = SECURITY_ATTRIBUTES {
             nLength: std::mem::size_of::<SECURITY_ATTRIBUTES>() as u32,
             bInheritHandle: true.into(),
-            lpSecurityDescriptor: std::ptr::addr_of_mut!(security_desc) as *mut std::ffi::c_void,
+            lpSecurityDescriptor: (&mut security_desc as *mut SECURITY_DESCRIPTOR).cast(),
         };
 
         let pipe_name = to_win32_wstr(&format!("{}{}", PIPE_PATH_ROOT, name));

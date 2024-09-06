@@ -13,7 +13,6 @@ use std::io::{Read, Write};
 
 pub type Result<T> = std::result::Result<T, Box<dyn std::error::Error>>;
 
-pub const PIPE_BUFFER_SIZE: u32 = 512;
 pub const PIPE_PATH_ROOT: &str = "\\\\.\\pipe\\";
 pub const PIPE_NAME: &str = "AutoPowerNotificationPipe";
 
@@ -26,7 +25,8 @@ pub struct Pipe<M, S: HandleStreamMode> {
 
 impl<M> Pipe<M, stream::Read> {
     pub fn read_to<T: serde::de::DeserializeOwned>(&mut self) -> Result<T> {
-        let mut buf = [0; PIPE_BUFFER_SIZE as usize];
+        let mut buf = Vec::with_capacity(1024);
+        self.stream.read_to_end(&mut buf)?;
         let count = self.read(&mut buf)?;
         let obj = bincode::deserialize(&mut buf[..count])?;
         Ok(obj)
