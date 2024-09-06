@@ -67,10 +67,3 @@ impl<M, S: HandleStreamMode> Pipe<M, S> {
         self.stream.close()
     }
 }
-
-impl<M, S: HandleStreamMode> Drop for Pipe<M, S> {
-    fn drop(&mut self) {
-        LOGGER.debug("Dropping pipe...");
-        self.close().unwrap();
-    }
-}

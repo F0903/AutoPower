@@ -158,9 +158,13 @@ impl PowerService {
         std::thread::spawn(move || {
             match ctrl_code {
                 SERVICE_CONTROL_POWEREVENT => {
+                    LOGGER.debug("Received power event.");
                     me.handle_power_event(data);
                 }
-                SERVICE_CONTROL_STOP => me.handle_stop(),
+                SERVICE_CONTROL_STOP => {
+                    LOGGER.debug("Received stop event.");
+                    me.handle_stop();
+                }
                 x => {
                     LOGGER.debug(format!("Received unknown control code: {}", x));
                 }
@@ -194,10 +198,12 @@ impl WindowsService for PowerService {
             },
         );
 
+        LOGGER.debug("Setting service status to start pending...");
         if let Err(e) = me.set_service_status(SERVICE_START_PENDING, None, None) {
             LOGGER.error(format!("Could not set service status!\n{}", e));
         }
 
+        LOGGER.debug("Setting up notification provider...");
         me.notification_provider = Some(match NotificationProvider::create() {
             Ok(x) => x,
             Err(e) => {
@@ -205,7 +211,6 @@ impl WindowsService for PowerService {
                 panic!();
             }
         });
-        LOGGER.debug("Creation of notification provider successful.");
 
         LOGGER.debug("Registering power setting notification handling...");
         if let Err(e) = RegisterPowerSettingNotification(
@@ -219,6 +224,7 @@ impl WindowsService for PowerService {
             ));
         }
 
+        LOGGER.debug("Creating stop event...");
         me.stop_event = Some(match CreateEventW(None, TRUE, FALSE, None) {
             Ok(x) => x,
             Err(err) => {
@@ -227,6 +233,7 @@ impl WindowsService for PowerService {
             }
         });
 
+        LOGGER.debug("Setting service status to running...");
         if let Err(e) = me.set_service_status(
             SERVICE_RUNNING,
             None,
@@ -248,6 +255,8 @@ impl WindowsService for PowerService {
             .unwrap()
             .terminate()
             .unwrap();
+
+        drop(Box::from_raw(me));
     }
 
     fn get_name() -> &'static str {

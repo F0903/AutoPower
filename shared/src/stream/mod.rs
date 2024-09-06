@@ -38,9 +38,3 @@ impl<M: HandleStreamMode> HandleStream<M> {
         Ok(())
     }
 }
-
-impl<M: HandleStreamMode> Drop for HandleStream<M> {
-    fn drop(&mut self) {
-        self.close().unwrap();
-    }
-}

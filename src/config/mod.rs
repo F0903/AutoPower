@@ -1,6 +1,7 @@
 mod config_error;
 mod state_config;
 
+use autopower_shared::logging::Logger;
 pub use config_error::ConfigError;
 use state_config::StateConfig;
 
@@ -10,6 +11,8 @@ use std::{
     fs::File,
     io::{BufReader, BufWriter, Write},
 };
+
+const LOGGER: Logger = Logger::new("power_config", "autopower");
 
 #[derive(Serialize, Deserialize, Debug)]
 pub struct PowerConfig {
@@ -34,12 +37,14 @@ impl Default for PowerConfig {
 
 impl PowerConfig {
     fn get(path: &str) -> Result<Self, ConfigError> {
+        LOGGER.debug("Reading power config...");
         let fs = File::open(path).map_err(|_| ConfigError::CouldNotLoadOrCreate)?;
         let buf = BufReader::new(fs);
         serde_json::from_reader(buf).map_err(|_| ConfigError::CouldNotLoadOrCreate)
     }
 
     fn new(path: &str) -> Result<Self, ConfigError> {
+        LOGGER.debug("Writing new power config...");
         let new_config = PowerConfig::default();
         let fs = File::create(path).map_err(|_| ConfigError::CouldNotLoadOrCreate)?;
         let mut buf = BufWriter::new(fs);

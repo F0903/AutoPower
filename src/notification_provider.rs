@@ -37,10 +37,3 @@ impl NotificationProvider {
         self.pipe.close()
     }
 }
-
-impl Drop for NotificationProvider {
-    fn drop(&mut self) {
-        LOGGER.debug("Dropping notification provider...");
-        self.terminate().unwrap();
-    }
-}
