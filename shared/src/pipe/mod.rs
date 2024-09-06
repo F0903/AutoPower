@@ -9,10 +9,14 @@ use crate::{
     logging::Logger,
     stream::{HandleStream, HandleStreamMode},
 };
-use std::io::{Read, Write};
+use std::{
+    fmt::Debug,
+    io::{Read, Write},
+};
 
 pub type Result<T> = std::result::Result<T, Box<dyn std::error::Error>>;
 
+pub const PIPE_BUFFER_SIZE: usize = 1024;
 pub const PIPE_PATH_ROOT: &str = "\\\\.\\pipe\\";
 pub const PIPE_NAME: &str = "AutoPowerNotificationPipe";
 
@@ -24,11 +28,12 @@ pub struct Pipe<M, S: HandleStreamMode> {
 }
 
 impl<M> Pipe<M, stream::Read> {
-    pub fn read_to<T: serde::de::DeserializeOwned>(&mut self) -> Result<T> {
-        let mut buf = Vec::with_capacity(1024);
-        self.stream.read_to_end(&mut buf)?;
+    pub fn read_to<T: serde::de::DeserializeOwned + Debug>(&mut self) -> Result<T> {
+        let mut buf = [0; PIPE_BUFFER_SIZE];
         let count = self.read(&mut buf)?;
+        LOGGER.debug(format!("Got {} bytes. Deserializing...", count));
         let obj = bincode::deserialize(&mut buf[..count])?;
+        LOGGER.debug(format!("Deserialized to {:?}", obj));
         Ok(obj)
     }
 }
@@ -49,6 +54,7 @@ impl<M> Pipe<M, stream::Write> {
 
 impl<M> std::io::Write for Pipe<M, stream::Write> {
     fn write(&mut self, buf: &[u8]) -> std::io::Result<usize> {
+        LOGGER.debug("Writing to pipe...");
         self.stream.write(buf)
     }
 
@@ -65,5 +71,12 @@ impl<M, S: HandleStreamMode> Pipe<M, S> {
     pub fn close(&self) -> Result<()> {
         LOGGER.debug("Closing pipe...");
         self.stream.close()
+    }
+}
+
+impl<M, S: HandleStreamMode> Drop for Pipe<M, S> {
+    fn drop(&mut self) {
+        LOGGER.debug("Dropping pipe...");
+        self.close().unwrap();
     }
 }

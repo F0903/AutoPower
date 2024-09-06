@@ -34,12 +34,13 @@ fn execute_command(command: NotificationCommand) -> Result<()> {
 }
 
 fn read_notification_command(input: &mut Pipe<Client, Read>) -> Result<NotificationCommand> {
-    LOGGER.debug(format!("notification_provider: got input"));
+    LOGGER.debug(format!("Waiting for input..."));
     let object = input.read_to()?;
+    LOGGER.debug(format!("Input object:\n{}", object));
     Ok(object)
 }
 
-fn wait_for_input() -> Result<()> {
+fn input_loop() -> Result<()> {
     let mut input = Pipe::create_client_retrying(PIPE_NAME)
         .map_err(|e| format!("Could not create client pipe!\n{}", e))?;
     LOGGER.debug("notification_provider: waiting for input...");
@@ -61,7 +62,7 @@ fn run() -> Result<()> {
             .ok()
             .map_err(|e| format!("Could not init COM!\n{}", e))?
     };
-    wait_for_input().map_err(|e| format!("Error occured while waiting for input!\n{}", e))?;
+    input_loop().map_err(|e| format!("Error occured while waiting for input!\n{}", e))?;
     Ok(())
 }
 

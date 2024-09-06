@@ -1,4 +1,4 @@
-use super::{Pipe, Result, PIPE_PATH_ROOT};
+use super::{Pipe, Result, PIPE_BUFFER_SIZE, PIPE_PATH_ROOT};
 use crate::{
     stream::{HandleStream, HandleStreamMode},
     util::get_last_win32_err,
@@ -15,8 +15,6 @@ use windows::Win32::{
         SystemServices::SECURITY_DESCRIPTOR_REVISION,
     },
 };
-
-const PIPE_BUFFER_SIZE: u32 = 1024;
 
 pub struct Server;
 
@@ -49,8 +47,8 @@ impl<S: HandleStreamMode> Pipe<Server, S> {
                 S::as_pipe_access_rights() | FILE_FLAG_FIRST_PIPE_INSTANCE,
                 PIPE_TYPE_MESSAGE | PIPE_READMODE_MESSAGE,
                 1,
-                PIPE_BUFFER_SIZE,
-                PIPE_BUFFER_SIZE,
+                PIPE_BUFFER_SIZE as u32,
+                PIPE_BUFFER_SIZE as u32,
                 0,
                 Some(&security),
             )

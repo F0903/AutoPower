@@ -33,8 +33,14 @@ impl Logger {
         self.log(input, LogLevel::Error);
     }
 
+    #[cfg(debug_assertions)]
     pub fn debug<A: Display>(&self, input: A) {
         self.log(input, LogLevel::Debug);
+    }
+
+    #[cfg(not(debug_assertions))]
+    pub fn debug<A: Display>(&self, input: A) {
+        drop(input)
     }
 
     pub fn log<A: Display>(&self, input: A, level: LogLevel) {
@@ -63,8 +69,9 @@ impl Logger {
 
         let time_now = time::OffsetDateTime::now_utc();
         let mut msg = format!(
-            "[{} | {}] {}",
+            "[{} | ({} - {})] {}",
             time::PrimitiveDateTime::new(time_now.date(), time_now.time()),
+            self.process_name,
             self.source_name,
             input
         );

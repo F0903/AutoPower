@@ -4,7 +4,7 @@ use crate::{
     power_scheme::set_power_scheme,
 };
 use autopower_shared::{logging::Logger, winstr::to_win32_wstr};
-use std::ffi::c_void;
+use std::{ffi::c_void, mem::ManuallyDrop};
 use windows::{
     core::PWSTR,
     Win32::{
@@ -149,7 +149,7 @@ impl PowerService {
         event_data: *mut c_void,
         _context: *mut c_void,
     ) -> u32 {
-        let mut me = _context.cast::<Self>().read();
+        let mut me = ManuallyDrop::new(_context.cast::<Self>().read());
         let data = HandlerData {
             event_type,
             event_data,
@@ -251,7 +251,7 @@ impl WindowsService for PowerService {
             LOGGER.error(format!("Could not set service status!\n{}", e));
         }
         me.notification_provider
-            .as_ref()
+            .as_mut()
             .unwrap()
             .terminate()
             .unwrap();

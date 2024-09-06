@@ -24,16 +24,19 @@ impl NotificationProvider {
 
     pub fn send_display_command(&mut self, title: &str, description: &str) -> Result<()> {
         LOGGER.debug(format!("Sent command:\n{} | {}", title, description));
-        let command = NotificationCommand {
+        self.pipe.write_as(NotificationCommand {
             name: "display".to_owned(),
             content: format!("{}\n{}", title, description),
-        };
-        self.pipe.write_as(&command)?;
+        })?;
         Ok(())
     }
 
-    pub fn terminate(&self) -> Result<()> {
+    pub fn terminate(&mut self) -> Result<()> {
         LOGGER.debug("Terminating notification provider...");
+        self.pipe.write_as(NotificationCommand {
+            name: "terminate".to_owned(),
+            content: "".to_owned(),
+        })?;
         self.pipe.close()
     }
 }
