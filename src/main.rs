@@ -1,6 +1,7 @@
 use autopower_shared::logging::Logger;
 
 mod config;
+mod display;
 mod handler_data;
 mod notification_provider;
 mod power_scheme;
@@ -21,8 +22,5 @@ fn main() -> Result<()> {
         return Ok(());
     }
 
-    if let Err(e) = services::start::<services::PowerService>() {
-        LOGGER.error(format!("Fatal error!\n  {}", e))
-    }
-    Ok(())
+    services::start::<services::PowerService>()
 }

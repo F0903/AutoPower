@@ -5,7 +5,7 @@ use autopower_shared::logging::Logger;
 pub use config_error::ConfigError;
 use state_config::StateConfig;
 
-use crate::power_scheme::PowerScheme;
+use crate::{display::RefreshRateMode, power_scheme::PowerScheme};
 use serde::{Deserialize, Serialize};
 use std::{
     fs::File,
@@ -25,11 +25,13 @@ impl Default for PowerConfig {
         Self {
             wired_config: StateConfig {
                 power_scheme: PowerScheme::HighPerformance,
-                screen_refresh_rate: "max".to_owned(),
+                change_refresh_rate: true,
+                screen_refresh_rate: RefreshRateMode::Max,
             },
             battery_config: StateConfig {
                 power_scheme: PowerScheme::Balanced,
-                screen_refresh_rate: "60".to_owned(),
+                change_refresh_rate: true,
+                screen_refresh_rate: RefreshRateMode::Value(60),
             },
         }
     }

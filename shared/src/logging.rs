@@ -21,10 +21,10 @@ pub struct Logger {
 }
 
 impl Logger {
-    pub const fn new(source_name: &'static str, process_name: &'static str) -> Self {
+    pub const fn new(source_name: &'static str, group_name: &'static str) -> Self {
         Self {
             source_name,
-            process_name,
+            process_name: group_name,
             log_path: OnceCell::new(),
         }
     }
@@ -39,9 +39,7 @@ impl Logger {
     }
 
     #[cfg(not(debug_assertions))]
-    pub fn debug<A: Display>(&self, input: A) {
-        drop(input)
-    }
+    pub fn debug<A: Display>(&self, _input: A) {}
 
     pub fn log<A: Display>(&self, input: A, level: LogLevel) {
         let log_path = self.log_path.get_or_init(|| {
