@@ -29,16 +29,30 @@ codegen-units = 1
 bincode = "^1.3"
 serde = { version = "^1.0", features = ["derive"] }
 serde_json = "^1.0"
-windows = { version = "^0.58" }
-
-[dependencies]
-autopower_shared = { path = "shared" }
-bincode = { workspace = true }
-windows = { workspace = true, features = [
+windows = { version = "^0.58", features = [
     "Win32_Foundation",
     "Win32_System_Registry",
     "Win32_System_Power",
     "Win32_System_Services",
     "Win32_System_Threading",
+    "Win32_System_SystemServices",
+    "Win32_System_Diagnostics_Debug",
+    "Win32_System_WinRT",
+    "Win32_System_Pipes",
+    "Win32_Storage_FileSystem",
+    "Win32_System_IO",
+    "Win32_Security",
+    "Win32_UI_WindowsAndMessaging",
+    "Foundation",
+    "UI_Notifications",
+    "Data_Xml_Dom",
+    "Win32_System_Com",
+    "Win32_System_Console",
+    "Win32_Graphics_Gdi",
 ] }
+
+[dependencies]
+autopower_shared = { path = "shared" }
+bincode = { workspace = true }
+windows = { workspace = true }
 serde = { workspace = true }
