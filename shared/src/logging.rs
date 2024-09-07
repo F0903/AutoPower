@@ -35,6 +35,7 @@ impl Logger {
 
     #[cfg(debug_assertions)]
     pub fn debug<A: Display>(&self, input: A) {
+        println!("{}", input);
         self.log(input, LogLevel::Debug);
     }
 
