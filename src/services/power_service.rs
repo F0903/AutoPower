@@ -219,18 +219,6 @@ impl WindowsService for PowerService {
             }
         });
 
-        /* LOGGER.debug("Registering power setting notification handling...");
-        if let Err(e) = RegisterPowerSettingNotification(
-            HANDLE(me.status_handle.unwrap().0),
-            &GUID_ACDC_POWER_SOURCE,
-            WindowsAndMessaging::REGISTER_NOTIFICATION_FLAGS(1),
-        ) {
-            LOGGER.error(format!(
-                "Could not register power settings notification!\n{}",
-                e
-            ));
-        } */
-
         LOGGER.debug("Creating stop event...");
         me.stop_event = Some(match CreateEventW(None, TRUE, FALSE, None) {
             Ok(x) => x,
