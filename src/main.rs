@@ -1,9 +1,7 @@
 use autopower_shared::logging::Logger;
 
-mod config;
-mod display;
 mod handler_data;
-mod notification_provider;
+mod proxy;
 mod services;
 
 type Result<T> = std::result::Result<T, Box<dyn std::error::Error>>;

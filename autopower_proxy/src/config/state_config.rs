@@ -1,7 +1,7 @@
 use super::PowerScheme;
 use crate::{
     display::{set_display_refresh_rate, RefreshRateMode},
-    notification_provider::NotificationProvider,
+    toast::Toast,
 };
 use serde::{Deserialize, Serialize};
 use windows::Win32::System::Power::PowerSetActiveScheme;
@@ -18,15 +18,13 @@ pub struct StateConfig {
 }
 
 impl StateConfig {
-    pub fn change_to(&self, notif_provider: &mut NotificationProvider) -> Result<()> {
-        unsafe {
-            PowerSetActiveScheme(None, Some(&self.power_scheme.to_guid())).ok()?;
+    pub fn change_to(&self) -> Result<()> {
+        if self.send_notification {
+            Toast::new("AutoPower", format!("Switching to {}", self.state_name)).send()?;
         }
 
-        if self.send_notification {
-            notif_provider
-                .send_display_command("AutoPower", &format!("Switching to {}.", self.state_name))
-                .map_err(|e| format!("Could not send notification!\n{}", e))?;
+        unsafe {
+            PowerSetActiveScheme(None, Some(&self.power_scheme.to_guid())).ok()?;
         }
 
         if self.change_refresh_rate {

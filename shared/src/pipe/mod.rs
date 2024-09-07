@@ -18,7 +18,7 @@ pub type Result<T> = std::result::Result<T, Box<dyn std::error::Error>>;
 
 pub const PIPE_BUFFER_SIZE: usize = 1024;
 pub const PIPE_PATH_ROOT: &str = "\\\\.\\pipe\\";
-pub const PIPE_NAME: &str = "AutoPowerNotificationPipe";
+pub const PIPE_NAME: &str = "AutoPowerProxy";
 
 const LOGGER: Logger = Logger::new("pipe", "autopower_shared");
 

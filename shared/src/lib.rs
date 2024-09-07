@@ -1,6 +1,6 @@
 pub mod logging;
-pub mod notification_command;
 pub mod pipe;
+pub mod proxy_command;
 pub mod stream;
 pub mod util;
 pub mod winstr;

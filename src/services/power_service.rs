@@ -1,8 +1,10 @@
 use super::WindowsService;
-use crate::{
-    config::PowerConfig, handler_data::HandlerData, notification_provider::NotificationProvider,
+use crate::{handler_data::HandlerData, proxy::Proxy};
+use autopower_shared::{
+    logging::Logger,
+    proxy_command::{PowerConfigSelection, ProxyCommand},
+    winstr::to_win32_wstr,
 };
-use autopower_shared::{logging::Logger, winstr::to_win32_wstr};
 use std::{ffi::c_void, mem::ManuallyDrop};
 use windows::{
     core::PWSTR,
@@ -36,18 +38,16 @@ pub struct PowerService {
     current_status: Option<SERVICE_STATUS>,
     status_handle: Option<SERVICE_STATUS_HANDLE>,
     stop_event: Option<HANDLE>,
-    notification_provider: Option<NotificationProvider>,
-    power_config: PowerConfig,
+    proxy: Option<Proxy>,
 }
 
 impl PowerService {
-    fn new(power_config: PowerConfig) -> Self {
+    fn new() -> Self {
         Self {
             current_status: None,
             status_handle: None,
             stop_event: None,
-            notification_provider: None,
-            power_config,
+            proxy: None,
         }
     }
 
@@ -76,17 +76,19 @@ impl PowerService {
     }
 
     fn handle_on_wired_power(&mut self) -> Result<()> {
-        self.power_config
-            .get_wired_config()
-            .change_to(self.notification_provider.as_mut().unwrap())?;
-        Ok(())
+        self.proxy
+            .as_mut()
+            .unwrap()
+            .send_command(ProxyCommand::ChangePowerConfig(PowerConfigSelection::Wired))
     }
 
     fn handle_on_battery_power(&mut self) -> Result<()> {
-        self.power_config
-            .get_battery_config()
-            .change_to(self.notification_provider.as_mut().unwrap())?;
-        Ok(())
+        self.proxy
+            .as_mut()
+            .unwrap()
+            .send_command(ProxyCommand::ChangePowerConfig(
+                PowerConfigSelection::Battery,
+            ))
     }
 
     fn handle_power_event(&mut self, data: HandlerData) {
@@ -173,8 +175,7 @@ impl WindowsService for PowerService {
     unsafe extern "system" fn service_main(_arg_num: u32, _args: *mut PWSTR) {
         LOGGER.debug("Registering service control handler...");
 
-        let me: &'static mut Self =
-            Box::leak(Box::new(Self::new(PowerConfig::get_or_create().unwrap())));
+        let me: &'static mut Self = Box::leak(Box::new(Self::new()));
         let service_name = to_win32_wstr(SERVICE_NAME);
         me.status_handle = Some(
             match RegisterServiceCtrlHandlerExW(
@@ -198,11 +199,11 @@ impl WindowsService for PowerService {
             LOGGER.error(format!("Could not set service status!\n{}", e));
         }
 
-        LOGGER.debug("Setting up notification provider...");
-        me.notification_provider = Some(match NotificationProvider::create() {
+        LOGGER.debug("Setting up proxy...");
+        me.proxy = Some(match Proxy::create() {
             Ok(x) => x,
             Err(e) => {
-                LOGGER.error(format!("Could not create notification provider!\n{}", e));
+                LOGGER.error(format!("Could not create proxy!\n{}", e));
                 panic!();
             }
         });
@@ -245,11 +246,7 @@ impl WindowsService for PowerService {
         if let Err(e) = me.set_service_status(SERVICE_STOPPED, Some(3), None) {
             LOGGER.error(format!("Could not set service status!\n{}", e));
         }
-        me.notification_provider
-            .as_mut()
-            .unwrap()
-            .terminate()
-            .unwrap();
+        me.proxy.as_mut().unwrap().terminate().ok();
 
         drop(Box::from_raw(me));
     }

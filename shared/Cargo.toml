@@ -19,6 +19,8 @@ windows = { workspace = true, features = [
     "Win32_Storage_FileSystem",
     "Win32_System_IO",
     "Win32_Security",
+    "Win32_UI_WindowsAndMessaging",
 ] }
+serde_json = { workspace = true }
 serde = { workspace = true }
 bincode = { workspace = true }

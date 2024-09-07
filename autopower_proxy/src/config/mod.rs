@@ -2,12 +2,12 @@ mod config_error;
 mod power_scheme;
 mod state_config;
 
-use autopower_shared::logging::Logger;
 pub use config_error::ConfigError;
 pub use power_scheme::PowerScheme;
 use state_config::StateConfig;
 
 use crate::display::RefreshRateMode;
+use autopower_shared::logging::Logger;
 use serde::{Deserialize, Serialize};
 use std::{
     fs::File,

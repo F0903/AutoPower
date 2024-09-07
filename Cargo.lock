@@ -9,17 +9,17 @@ dependencies = [
  "autopower_shared",
  "bincode",
  "serde",
- "serde_json",
  "windows",
 ]
 
 [[package]]
-name = "autopower_notification_provider"
+name = "autopower_proxy"
 version = "3.0.0"
 dependencies = [
  "autopower_shared",
  "bincode",
  "serde",
+ "serde_json",
  "windows",
 ]
 
@@ -30,6 +30,7 @@ dependencies = [
  "bincode",
  "once_cell",
  "serde",
+ "serde_json",
  "time",
  "windows",
 ]

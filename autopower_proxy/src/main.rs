@@ -1,51 +1,50 @@
 #![windows_subsystem = "windows"]
 
+mod config;
+mod display;
 mod toast;
+
+use config::PowerConfig;
 
 use autopower_shared::{
     logging::Logger,
-    notification_command::NotificationCommand,
     pipe::{Client, Pipe, PIPE_NAME},
+    proxy_command::{PowerConfigSelection, ProxyCommand},
     stream::Read,
 };
-use toast::Toast;
 use windows::Win32::System::Com::CoInitialize;
 
 type Result<T> = std::result::Result<T, Box<dyn std::error::Error>>;
 
-const LOGGER: Logger = Logger::new("main", "autopower_notifier");
+const LOGGER: Logger = Logger::new("main", "autopower_proxy");
 
-fn execute_display_command(command: NotificationCommand) -> Result<()> {
-    let mut cmd_lines = command.content.lines();
-    let title = cmd_lines.next().expect("Could not get next cmd line!");
-    let content = cmd_lines
-        .next()
-        .expect("Could not get next second cmd line!");
-    let toast = Toast::new(title, content);
-    toast.send()?;
-    Ok(())
-}
-
-fn execute_command(command: NotificationCommand) -> Result<()> {
-    match command.name.as_str() {
-        "display" => execute_display_command(command),
-        _ => Ok(()),
+fn change_power_config(selection: PowerConfigSelection) -> Result<()> {
+    let config = PowerConfig::get_or_create()?;
+    match selection {
+        PowerConfigSelection::Wired => config.get_wired_config().change_to(),
+        PowerConfigSelection::Battery => config.get_battery_config().change_to(),
     }
 }
 
-fn read_notification_command(input: &mut Pipe<Client, Read>) -> Result<NotificationCommand> {
+fn execute_command(command: ProxyCommand) -> Result<()> {
+    match command {
+        ProxyCommand::ChangePowerConfig(selection) => change_power_config(selection),
+    }
+}
+
+fn read_command(input: &mut Pipe<Client, Read>) -> Result<ProxyCommand> {
     LOGGER.debug(format!("Waiting for input..."));
     let object = input.read_to()?;
-    LOGGER.debug(format!("Input object:\n{}", object));
+    LOGGER.debug(format!("Input object:\n{:?}", object));
     Ok(object)
 }
 
 fn input_loop() -> Result<()> {
     let mut input = Pipe::create_client_retrying(PIPE_NAME)
         .map_err(|e| format!("Could not create client pipe!\n{}", e))?;
-    LOGGER.debug("notification_provider: waiting for input...");
+    LOGGER.debug("Waiting for input...");
     loop {
-        let command = match read_notification_command(&mut input) {
+        let command = match read_command(&mut input) {
             Ok(x) => x,
             Err(e) => {
                 LOGGER.error(format!("Could not read command!\n{}", e));
@@ -67,7 +66,7 @@ fn run() -> Result<()> {
 }
 
 fn main() -> Result<()> {
-    LOGGER.debug("Starting notification provider...");
+    LOGGER.debug("Starting proxy...");
     std::panic::set_hook(Box::new(|info| {
         LOGGER.error(info);
     }));

@@ -6,14 +6,18 @@ use windows::{
 
 type Result<T> = std::result::Result<T, Box<dyn std::error::Error>>;
 
-pub struct Toast<'a> {
-    title: &'a str,
-    description: &'a str,
+#[derive(Debug)]
+pub struct Toast {
+    title: String,
+    description: String,
 }
 
-impl<'a> Toast<'a> {
-    pub fn new(title: &'a str, description: &'a str) -> Self {
-        Self { title, description }
+impl Toast {
+    pub fn new(title: impl ToString, description: impl ToString) -> Self {
+        Self {
+            title: title.to_string(),
+            description: description.to_string(),
+        }
     }
 
     fn create_notifcation(&self) -> Result<ToastNotification> {
@@ -30,7 +34,7 @@ impl<'a> Toast<'a> {
                 .Item(i)
                 .map_err(|e| format!("Could not get item!\n{}", e))?;
             let node = &toast_xml
-                .CreateTextNode(&HSTRING::from(self.description))
+                .CreateTextNode(&HSTRING::from(&self.description))
                 .map_err(|e| format!("Could not create text node!\n{}", e))?;
             elem.AppendChild(node)
                 .map_err(|e| format!("Could not append child!\n{}", e))?;
@@ -47,7 +51,7 @@ impl<'a> Toast<'a> {
             .SetExpiresOnReboot(true)
             .map_err(|e| format!("Could not set expire on reboot!\n{}", e))?;
 
-        let title = to_h_string(self.title)?;
+        let title = to_h_string(&self.title)?;
         let notifier = ToastNotificationManager::CreateToastNotifierWithId(&title)
             .map_err(|e| format!("Could not create toast notifier with id!\n{}", e))?;
         notifier
