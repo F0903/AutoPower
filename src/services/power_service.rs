@@ -76,6 +76,7 @@ impl PowerService {
     }
 
     fn handle_on_wired_power(&mut self) -> Result<()> {
+        LOGGER.debug("On wired power event.");
         self.proxy
             .as_mut()
             .unwrap()
@@ -83,6 +84,7 @@ impl PowerService {
     }
 
     fn handle_on_battery_power(&mut self) -> Result<()> {
+        LOGGER.debug("On battery power event.");
         self.proxy
             .as_mut()
             .unwrap()
@@ -98,11 +100,13 @@ impl PowerService {
         } = data;
 
         if event_type != PBT_POWERSETTINGCHANGE {
+            LOGGER.debug("Power event was not PBT_POWERSETTINGCHANGE");
             return;
         }
 
         let pbs = event_data as *mut POWERBROADCAST_SETTING;
         if unsafe { (*pbs).PowerSetting } != GUID_ACDC_POWER_SOURCE {
+            LOGGER.debug("Power event was not GUID_ACDC_POWER_SOURCE");
             return;
         }
 
@@ -110,12 +114,12 @@ impl PowerService {
         match SYSTEM_POWER_CONDITION(new_power as i32) {
             Power::PoAc => self.handle_on_wired_power().unwrap(),
             Power::PoDc => self.handle_on_battery_power().unwrap(),
-            _ => (),
+            _ => LOGGER.debug("Unknown SYSTEM_POWER_CONDITION"),
         }
     }
 
     fn handle_stop(&mut self) {
-        LOGGER.debug("Received stop event... Stopping...");
+        LOGGER.debug("Stopping...");
         if {
             self.current_status
                 .ok_or("Current status was not set when stopping!")

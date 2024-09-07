@@ -42,7 +42,7 @@ fn read_command(input: &mut Pipe<Client, Read>) -> Result<ProxyCommand> {
 fn input_loop() -> Result<()> {
     let mut input = Pipe::create_client_retrying(PIPE_NAME)
         .map_err(|e| format!("Could not create client pipe!\n{}", e))?;
-    LOGGER.debug("Waiting for input...");
+    LOGGER.debug("Entering input loop...");
     loop {
         let command = match read_command(&mut input) {
             Ok(x) => x,
