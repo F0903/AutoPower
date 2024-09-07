@@ -4,7 +4,6 @@ mod config;
 mod display;
 mod handler_data;
 mod notification_provider;
-mod power_scheme;
 mod services;
 
 type Result<T> = std::result::Result<T, Box<dyn std::error::Error>>;

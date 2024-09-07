@@ -1,11 +1,13 @@
 mod config_error;
+mod power_scheme;
 mod state_config;
 
 use autopower_shared::logging::Logger;
 pub use config_error::ConfigError;
+pub use power_scheme::PowerScheme;
 use state_config::StateConfig;
 
-use crate::{display::RefreshRateMode, power_scheme::PowerScheme};
+use crate::display::RefreshRateMode;
 use serde::{Deserialize, Serialize};
 use std::{
     fs::File,
@@ -24,14 +26,18 @@ impl Default for PowerConfig {
     fn default() -> Self {
         Self {
             wired_config: StateConfig {
+                state_name: "Wired".to_owned(),
                 power_scheme: PowerScheme::HighPerformance,
                 change_refresh_rate: true,
                 screen_refresh_rate: RefreshRateMode::Max,
+                send_notification: true,
             },
             battery_config: StateConfig {
+                state_name: "Battery".to_owned(),
                 power_scheme: PowerScheme::Balanced,
                 change_refresh_rate: true,
                 screen_refresh_rate: RefreshRateMode::Value(60),
+                send_notification: true,
             },
         }
     }

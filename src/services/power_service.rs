@@ -1,7 +1,6 @@
 use super::WindowsService;
 use crate::{
-    config::PowerConfig, display::set_display_refresh_rate, handler_data::HandlerData,
-    notification_provider::NotificationProvider, power_scheme::set_power_scheme,
+    config::PowerConfig, handler_data::HandlerData, notification_provider::NotificationProvider,
 };
 use autopower_shared::{logging::Logger, winstr::to_win32_wstr};
 use std::{ffi::c_void, mem::ManuallyDrop};
@@ -77,23 +76,16 @@ impl PowerService {
     }
 
     fn handle_on_wired_power(&mut self) -> Result<()> {
-        let wired_config = self.power_config.get_wired_config();
-        set_power_scheme(
-            wired_config.get_power_scheme(),
-            self.notification_provider.as_mut().unwrap(),
-        )?;
-        if wired_config.should_change_refresh_rate() {
-            set_display_refresh_rate(wired_config.get_refresh_rate())?;
-        }
+        self.power_config
+            .get_wired_config()
+            .change_to(self.notification_provider.as_mut().unwrap())?;
         Ok(())
     }
 
     fn handle_on_battery_power(&mut self) -> Result<()> {
-        let battery_config = self.power_config.get_battery_config();
-        set_power_scheme(
-            battery_config.get_power_scheme(),
-            self.notification_provider.as_mut().unwrap(),
-        )?;
+        self.power_config
+            .get_battery_config()
+            .change_to(self.notification_provider.as_mut().unwrap())?;
         Ok(())
     }
 
