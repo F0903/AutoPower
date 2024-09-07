@@ -3,4 +3,4 @@
 Assert-Admin($MyInvocation.MyCommand.Definition)
 
 sc.exe start $ServiceName
-Start-Process -FilePath $NotifierPath -ErrorAction Stop
+Start-Process -FilePath $ProxyPath -ErrorAction Stop

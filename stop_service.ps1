@@ -3,4 +3,4 @@
 Assert-Admin($MyInvocation.MyCommand.Definition)
 
 sc.exe stop $ServiceName
-Stop-Process -Name $NotifierName
+Stop-Process -Name $ProxyName

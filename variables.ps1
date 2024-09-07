@@ -1,7 +1,7 @@
 $Global:ServiceName = "AutoPower"
 $Global:Dir = "$($PSScriptRoot)\autopower.exe"
-$Global:NotifierPath = "$($PSScriptRoot)\autopower_notification_provider.exe"
-$Global:NotifierName = "AutoPower Notification Provider"
+$Global:ProxyPath = "$($PSScriptRoot)\autopower_proxy.exe"
+$Global:ProxyName = "AutoPower Proxy"
 
 function Assert-Admin($script_definition) {
     $User = [Security.Principal.WindowsIdentity]::GetCurrent()

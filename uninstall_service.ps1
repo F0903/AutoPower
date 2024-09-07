@@ -6,7 +6,7 @@ Assert-Admin($MyInvocation.MyCommand.Definition)
 
 sc.exe delete $ServiceName
 
-Remove-ItemProperty -Path "HKLM:\SOFTWARE\Microsoft\Windows\CurrentVersion\Run" -Name "AutoPower Notification Provider"
+Remove-ItemProperty -Path "HKLM:\SOFTWARE\Microsoft\Windows\CurrentVersion\Run" -Name "AutoPower Proxy"
 
 Remove-Item -LiteralPath "$env:TEMP\autopower" -Force -Recurse
 Write-Output "Deleted autopower log directory."
