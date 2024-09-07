@@ -43,7 +43,7 @@ fn get_primary_display_adapter() -> Result<DISPLAY_DEVICEW> {
         }
         return Ok(display_adapter);
     }
-    Err("Could not get primary display device!".into())
+    Err("Could not get primary display adapter!".into())
 }
 
 fn get_current_display_mode(monitor_name: PCWSTR) -> Result<DEVMODEW> {
@@ -138,6 +138,7 @@ fn get_closest_match_display_mode(mode: RefreshRateMode) -> Result<DEVMODEW> {
 }
 
 pub fn set_display_refresh_rate(mode: RefreshRateMode) -> Result<()> {
+    LOGGER.debug(format!("Setting display refresh rate to {:?}...", mode));
     let new_mode = get_closest_match_display_mode(mode)?;
     unsafe {
         let flags = ChangeDisplaySettingsW(Some(&new_mode), CDS_TYPE(0));
