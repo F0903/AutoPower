@@ -63,7 +63,7 @@ impl PowerConfig {
     }
 
     pub fn get_or_create() -> Result<Self, ConfigError> {
-        const CONFIG_PATH: &str = "config.json";
+        const CONFIG_PATH: &str = "./config.json";
         Self::get(CONFIG_PATH).or_else(|_| Self::new(CONFIG_PATH))
     }
 

@@ -11,10 +11,7 @@ use windows::{
     Win32::{
         Foundation::{CloseHandle, FALSE, HANDLE, NO_ERROR, TRUE},
         System::{
-            Power::{
-                self, RegisterPowerSettingNotification, POWERBROADCAST_SETTING,
-                SYSTEM_POWER_CONDITION,
-            },
+            Power::{self, POWERBROADCAST_SETTING, SYSTEM_POWER_CONDITION},
             Services::{
                 RegisterServiceCtrlHandlerExW, SetServiceStatus, SERVICE_ACCEPT_POWEREVENT,
                 SERVICE_ACCEPT_STOP, SERVICE_CONTROL_POWEREVENT, SERVICE_CONTROL_STOP,
@@ -25,7 +22,7 @@ use windows::{
             SystemServices::GUID_ACDC_POWER_SOURCE,
             Threading::{CreateEventW, SetEvent, WaitForSingleObject, INFINITE},
         },
-        UI::WindowsAndMessaging::{self, PBT_POWERSETTINGCHANGE},
+        UI::WindowsAndMessaging::{PBT_APMPOWERSTATUSCHANGE, PBT_POWERSETTINGCHANGE},
     },
 };
 
@@ -99,15 +96,25 @@ impl PowerService {
             event_data,
         } = data;
 
+        //temp debug
+        if event_type == PBT_APMPOWERSTATUSCHANGE {
+            LOGGER.debug("Power event was PBT_APMPOWERSTATUSCHANGE");
+        }
+
         if event_type != PBT_POWERSETTINGCHANGE {
             LOGGER.debug("Power event was not PBT_POWERSETTINGCHANGE");
             return;
         }
 
         let pbs = event_data as *mut POWERBROADCAST_SETTING;
-        if unsafe { (*pbs).PowerSetting } != GUID_ACDC_POWER_SOURCE {
-            LOGGER.debug("Power event was not GUID_ACDC_POWER_SOURCE");
-            return;
+        unsafe {
+            if (*pbs).PowerSetting != GUID_ACDC_POWER_SOURCE {
+                LOGGER.debug(format!(
+                    "Power event GUID was not GUID_ACDC_POWER_SOURCE\nGUID was: {:?}",
+                    (*pbs).PowerSetting
+                ));
+                return;
+            }
         }
 
         let new_power = unsafe { (*pbs).Data[0] };
@@ -212,7 +219,7 @@ impl WindowsService for PowerService {
             }
         });
 
-        LOGGER.debug("Registering power setting notification handling...");
+        /* LOGGER.debug("Registering power setting notification handling...");
         if let Err(e) = RegisterPowerSettingNotification(
             HANDLE(me.status_handle.unwrap().0),
             &GUID_ACDC_POWER_SOURCE,
@@ -222,7 +229,7 @@ impl WindowsService for PowerService {
                 "Could not register power settings notification!\n{}",
                 e
             ));
-        }
+        } */
 
         LOGGER.debug("Creating stop event...");
         me.stop_event = Some(match CreateEventW(None, TRUE, FALSE, None) {
