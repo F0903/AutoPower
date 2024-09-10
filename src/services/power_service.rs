@@ -244,7 +244,7 @@ impl WindowsService for PowerService {
         let mut power_notif_handle = match RegisterPowerSettingNotification(
             HANDLE(me.status_handle.unwrap().0),
             &GUID_ACDC_POWER_SOURCE,
-            WindowsAndMessaging::REGISTER_NOTIFICATION_FLAGS(1),
+            WindowsAndMessaging::DEVICE_NOTIFY_SERVICE_HANDLE,
         ) {
             Ok(x) => x,
             Err(e) => {
