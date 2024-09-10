@@ -7,7 +7,7 @@ use autopower_shared::{
 
 type Result<T> = std::result::Result<T, Box<dyn std::error::Error>>;
 
-const LOGGER: Logger = Logger::new("notifications", "autopower");
+const LOGGER: Logger = Logger::new("proxy", "autopower");
 
 pub struct Proxy {
     pipe: Pipe<Server, Write>,

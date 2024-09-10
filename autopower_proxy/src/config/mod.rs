@@ -14,7 +14,7 @@ use std::{
     io::{BufReader, BufWriter, Write},
 };
 
-const LOGGER: Logger = Logger::new("power_config", "autopower");
+const LOGGER: Logger = Logger::new("power_config", "autopower_proxy");
 
 #[derive(Serialize, Deserialize, Debug)]
 pub struct PowerConfig {
