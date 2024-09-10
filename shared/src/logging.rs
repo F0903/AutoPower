@@ -1,5 +1,4 @@
-use once_cell::unsync::OnceCell;
-use std::{fmt::Display, io::Write, path::PathBuf, str::FromStr};
+use std::{fmt::Display, io::Write, path::PathBuf, str::FromStr, sync::OnceLock};
 
 const TEMP_PATH: &str = std::env!("TEMP");
 
@@ -17,7 +16,7 @@ pub enum LogLevel {
 pub struct Logger {
     source_name: &'static str,
     process_name: &'static str,
-    log_path: OnceCell<PathBuf>,
+    log_path: OnceLock<PathBuf>,
 }
 
 impl Logger {
@@ -25,7 +24,7 @@ impl Logger {
         Self {
             source_name,
             process_name: group_name,
-            log_path: OnceCell::new(),
+            log_path: OnceLock::new(),
         }
     }
 
@@ -41,6 +40,12 @@ impl Logger {
 
     #[cfg(not(debug_assertions))]
     pub fn debug<A: Display>(&self, _input: A) {}
+
+    pub fn set_panic_hook(logger: &'static Self) {
+        std::panic::set_hook(Box::new(|info| {
+            logger.error(info);
+        }));
+    }
 
     pub fn log<A: Display>(&self, input: A, level: LogLevel) {
         let log_path = self.log_path.get_or_init(|| {

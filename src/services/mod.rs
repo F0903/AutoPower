@@ -1,3 +1,4 @@
+mod handler_data;
 mod power_service;
 
 pub use power_service::PowerService;
@@ -15,7 +16,7 @@ pub trait WindowsService {
     fn get_name() -> &'static str;
 }
 
-const LOGGER: Logger = Logger::new("services", "autopower");
+static LOGGER: Logger = Logger::new("services", "autopower");
 
 pub fn start<S: WindowsService>() -> Result<()> {
     std::panic::set_hook(Box::new(|info| {

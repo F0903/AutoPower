@@ -16,7 +16,7 @@ use windows::Win32::System::Com::CoInitialize;
 
 type Result<T> = std::result::Result<T, Box<dyn std::error::Error>>;
 
-const LOGGER: Logger = Logger::new("main", "autopower_proxy");
+static LOGGER: Logger = Logger::new("main", "autopower_proxy");
 
 fn change_power_config(selection: PowerConfigSelection) -> Result<()> {
     let config = PowerConfig::get_or_create()?;
@@ -55,26 +55,18 @@ fn input_loop() -> Result<()> {
     }
 }
 
-fn run() -> Result<()> {
+fn main() -> Result<()> {
+    LOGGER.debug("Starting proxy...");
+    Logger::set_panic_hook(&LOGGER);
+
     unsafe {
         CoInitialize(None)
             .ok()
             .map_err(|e| format!("Could not init COM!\n{}", e))?
     };
-    input_loop().map_err(|e| format!("Error occured while waiting for input!\n{}", e))?;
-    Ok(())
-}
 
-fn main() -> Result<()> {
-    LOGGER.debug("Starting proxy...");
-    std::panic::set_hook(Box::new(|info| {
-        LOGGER.error(info);
-    }));
-    match run() {
-        Ok(_) => (),
-        Err(e) => {
-            LOGGER.error(format!("Exited with error!\n{}", e));
-        }
+    if let Err(e) = input_loop() {
+        LOGGER.error(format!("Input loop error!\n{}", e));
     }
     Ok(())
 }

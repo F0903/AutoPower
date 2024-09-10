@@ -10,12 +10,18 @@ use serde::{Deserialize, Serialize};
 use std::{
     fs::File,
     io::{BufReader, BufWriter, Write},
-    path::Path,
+    path::{Path, PathBuf},
+    sync::LazyLock,
 };
 
-const LOGGER: Logger = Logger::new("power_config", "autopower_proxy");
+static LOGGER: Logger = Logger::new("power_config", "autopower_proxy");
 
 type Result<T> = crate::Result<T>;
+
+static CACHED_CONFIG_PATH: LazyLock<PathBuf> = LazyLock::new(|| {
+    const CONFIG_FILE: &str = "config.json";
+    get_process_exe_path().unwrap().with_file_name(CONFIG_FILE)
+});
 
 #[derive(Serialize, Deserialize, Debug)]
 pub struct PowerConfig {
@@ -63,9 +69,7 @@ impl PowerConfig {
     }
 
     pub fn get_or_create() -> Result<Self> {
-        const CONFIG_FILE: &str = "config.json";
-        let path = get_process_exe_path()?.with_file_name(CONFIG_FILE);
-        Self::get(&path).or_else(|_| Self::new(&path))
+        Self::get(&CACHED_CONFIG_PATH).or_else(|_| Self::new(&CACHED_CONFIG_PATH))
     }
 
     pub fn get_wired_config(&self) -> &StateConfig {

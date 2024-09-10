@@ -20,7 +20,7 @@ pub const PIPE_BUFFER_SIZE: usize = 1024;
 pub const PIPE_PATH_ROOT: &str = "\\\\.\\pipe\\";
 pub const PIPE_NAME: &str = "AutoPowerProxy";
 
-const LOGGER: Logger = Logger::new("pipe", "autopower_shared");
+static LOGGER: Logger = Logger::new("pipe", "autopower_shared");
 
 pub struct Pipe<M, S: HandleStreamMode> {
     stream: HandleStream<S>,

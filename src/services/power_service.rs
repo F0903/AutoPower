@@ -1,5 +1,5 @@
-use super::WindowsService;
-use crate::{debug_utils::print_power_event_type, handler_data::HandlerData, proxy::Proxy};
+use super::{handler_data::HandlerData, WindowsService};
+use crate::{debug_utils::print_power_event_type, proxy::Proxy};
 use autopower_shared::{
     logging::Logger,
     proxy_command::{PowerConfigSelection, ProxyCommand},
@@ -32,7 +32,7 @@ use windows::{
 type Result<T> = super::Result<T>;
 
 const SERVICE_NAME: &str = "AutoPower";
-const LOGGER: Logger = Logger::new("power_service", "autopower");
+static LOGGER: Logger = Logger::new("power_service", "autopower");
 
 pub struct PowerService {
     current_status: Option<SERVICE_STATUS>,
@@ -188,6 +188,8 @@ impl PowerService {
 impl WindowsService for PowerService {
     unsafe extern "system" fn service_main(_arg_num: u32, _args: *mut PWSTR) {
         LOGGER.debug("Registering service control handler...");
+
+        Logger::set_panic_hook(&LOGGER);
 
         let me: &'static mut Self = Box::leak(Box::new(Self::new()));
         let service_name = to_win32_wstr(SERVICE_NAME);

@@ -15,7 +15,7 @@ use windows::{
     },
 };
 
-const LOGGER: Logger = Logger::new("display", "autopower_proxy");
+static LOGGER: Logger = Logger::new("display", "autopower_proxy");
 
 fn get_primary_display_adapter() -> Result<DISPLAY_DEVICEW> {
     let mut display_adapter = DISPLAY_DEVICEW::default();

@@ -6,7 +6,7 @@ use windows::Win32::{
     Storage::FileSystem::{ReadFile, PIPE_ACCESS_INBOUND},
 };
 
-const LOGGER: Logger = Logger::new("stream_reader", "autopower_shared");
+static LOGGER: Logger = Logger::new("stream_reader", "autopower_shared");
 
 pub struct Read;
 impl HandleStreamMode for Read {

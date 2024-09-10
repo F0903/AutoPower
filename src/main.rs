@@ -1,13 +1,12 @@
 use autopower_shared::logging::Logger;
 
 mod debug_utils;
-mod handler_data;
 mod proxy;
 mod services;
 
 type Result<T> = std::result::Result<T, Box<dyn std::error::Error>>;
 
-const LOGGER: Logger = Logger::new("main", "autopower");
+static LOGGER: Logger = Logger::new("main", "autopower");
 
 fn main() -> Result<()> {
     LOGGER.debug("Starting... (main)");
