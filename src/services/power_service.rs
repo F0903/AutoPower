@@ -11,7 +11,10 @@ use windows::{
     Win32::{
         Foundation::{CloseHandle, FALSE, HANDLE, NO_ERROR, TRUE},
         System::{
-            Power::{self, POWERBROADCAST_SETTING, SYSTEM_POWER_CONDITION},
+            Power::{
+                self, RegisterPowerSettingNotification, POWERBROADCAST_SETTING,
+                SYSTEM_POWER_CONDITION,
+            },
             Services::{
                 RegisterServiceCtrlHandlerExW, SetServiceStatus, SERVICE_ACCEPT_POWEREVENT,
                 SERVICE_ACCEPT_STOP, SERVICE_CONTROL_POWEREVENT, SERVICE_CONTROL_STOP,
@@ -22,7 +25,7 @@ use windows::{
             SystemServices::GUID_ACDC_POWER_SOURCE,
             Threading::{CreateEventW, SetEvent, WaitForSingleObject, INFINITE},
         },
-        UI::WindowsAndMessaging::{PBT_APMPOWERSTATUSCHANGE, PBT_POWERSETTINGCHANGE},
+        UI::WindowsAndMessaging::{self, PBT_APMPOWERSTATUSCHANGE, PBT_POWERSETTINGCHANGE},
     },
 };
 
@@ -237,6 +240,20 @@ impl WindowsService for PowerService {
             LOGGER.error(format!("Could not set service status!\n{}", e));
         }
 
+        LOGGER.debug("Registering power setting notification handling...");
+        let mut power_notif_handle = match RegisterPowerSettingNotification(
+            HANDLE(me.status_handle.unwrap().0),
+            &GUID_ACDC_POWER_SOURCE,
+            WindowsAndMessaging::REGISTER_NOTIFICATION_FLAGS(1),
+        ) {
+            Ok(x) => x,
+            Err(e) => {
+                let msg = format!("Could not register power settings notification!\n{}", e);
+                LOGGER.error(&msg);
+                panic!("{}", msg);
+            }
+        };
+
         // Wait for exit.
         WaitForSingleObject(me.stop_event.unwrap(), INFINITE);
         LOGGER.debug("Stop event signaled. Cleaning up and terminating...");
@@ -246,6 +263,9 @@ impl WindowsService for PowerService {
             LOGGER.error(format!("Could not set service status!\n{}", e));
         }
         me.proxy.as_mut().unwrap().terminate().ok();
+
+        use windows::core::Free;
+        power_notif_handle.free();
 
         drop(Box::from_raw(me));
     }
