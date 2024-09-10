@@ -1,3 +1,4 @@
 # TODO
 
-- Rewrite as a normal background process. The current way is too limiting due to session 0 isolation, and strange behaviour with some APIs.
+- Start the proxy process from the service.
+- Scrap the PS1 scripts and install/uninstall directly from the main exe.

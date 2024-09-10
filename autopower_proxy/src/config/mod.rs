@@ -1,21 +1,21 @@
-mod config_error;
 mod power_scheme;
 mod state_config;
 
-pub use config_error::ConfigError;
 pub use power_scheme::PowerScheme;
 use state_config::StateConfig;
 
 use crate::display::RefreshRateMode;
-use autopower_shared::logging::Logger;
+use autopower_shared::{logging::Logger, util::get_process_exe_path};
 use serde::{Deserialize, Serialize};
 use std::{
     fs::File,
     io::{BufReader, BufWriter, Write},
-    path::{Path, PathBuf},
+    path::Path,
 };
 
 const LOGGER: Logger = Logger::new("power_config", "autopower_proxy");
+
+type Result<T> = crate::Result<T>;
 
 #[derive(Serialize, Deserialize, Debug)]
 pub struct PowerConfig {
@@ -45,30 +45,26 @@ impl Default for PowerConfig {
 }
 
 impl PowerConfig {
-    fn get(path: &Path) -> Result<Self, ConfigError> {
+    fn get(path: &Path) -> Result<Self> {
         LOGGER.debug(format!("Reading power config at {}", path.display()));
-
-        let fs = File::open(path).map_err(|_| ConfigError::CouldNotLoadOrCreate)?;
+        let fs = File::open(path)?;
         let buf = BufReader::new(fs);
-        serde_json::from_reader(buf).map_err(|_| ConfigError::CouldNotLoadOrCreate)
+        serde_json::from_reader(buf).map_err(|e| e.into())
     }
 
-    fn new(path: &Path) -> Result<Self, ConfigError> {
+    fn new(path: &Path) -> Result<Self> {
         LOGGER.debug(format!("Writing new power config at {}", path.display()));
         let new_config = PowerConfig::default();
-        let fs = File::create(path).map_err(|_| ConfigError::CouldNotLoadOrCreate)?;
+        let fs = File::create(path)?;
         let mut buf = BufWriter::new(fs);
-        serde_json::to_writer_pretty(&mut buf, &new_config)
-            .map_err(|_| ConfigError::CouldNotLoadOrCreate)?;
-        buf.flush().map_err(|_| ConfigError::CouldNotLoadOrCreate)?;
+        serde_json::to_writer_pretty(&mut buf, &new_config)?;
+        buf.flush()?;
         Ok(new_config)
     }
 
-    pub fn get_or_create() -> Result<Self, ConfigError> {
-        const CONFIG_PATH: &str = "./config.json";
-        let path = PathBuf::from(CONFIG_PATH)
-            .canonicalize()
-            .map_err(|_| ConfigError::CouldNotLoadOrCreate)?;
+    pub fn get_or_create() -> Result<Self> {
+        const CONFIG_FILE: &str = "config.json";
+        let path = get_process_exe_path()?.with_file_name(CONFIG_FILE);
         Self::get(&path).or_else(|_| Self::new(&path))
     }
 

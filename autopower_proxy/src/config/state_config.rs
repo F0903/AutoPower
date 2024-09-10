@@ -6,7 +6,7 @@ use crate::{
 use serde::{Deserialize, Serialize};
 use windows::Win32::System::Power::PowerSetActiveScheme;
 
-type Result<T> = crate::Result<T>; // Perhaps make a custom error in the future.
+type Result<T> = crate::Result<T>;
 
 #[derive(Serialize, Deserialize, Debug)]
 pub struct StateConfig {

@@ -158,11 +158,13 @@ impl PowerService {
         event_data: *mut c_void,
         _context: *mut c_void,
     ) -> u32 {
+        // DO NOT DROP, will be dropped in service_main on exit.
         let mut me = ManuallyDrop::new(_context.cast::<Self>().read());
         let data = HandlerData {
             event_type,
             event_data,
         };
+
         // Win32 docs say to start new thread for any other work than returning immediately
         std::thread::spawn(move || {
             match ctrl_code {

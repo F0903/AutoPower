@@ -14,7 +14,7 @@ impl Win32StrPtr<u16> {
     }
 
     pub fn from_buffer(data: Vec<u16>) -> Self {
-        Self { data: data }
+        Self { data }
     }
 }
 
