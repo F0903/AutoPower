@@ -99,13 +99,13 @@ impl PowerService {
             event_data,
         } = data;
 
+        #[cfg(debug_assertions)]
+        print_power_event_type(event_type, &LOGGER);
+
         if event_type != PBT_POWERSETTINGCHANGE {
             LOGGER.debug("Power event was not PBT_POWERSETTINGCHANGE");
             return;
         }
-
-        #[cfg(debug_assertions)]
-        print_power_event_type(event_type, &LOGGER);
 
         let pbs = event_data as *mut POWERBROADCAST_SETTING;
         unsafe {
