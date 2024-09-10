@@ -1,3 +1,5 @@
+#![allow(dead_code)]
+
 use autopower_shared::logging::Logger;
 use windows::Win32::UI::WindowsAndMessaging;
 

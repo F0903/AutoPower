@@ -1,5 +1,8 @@
+#[cfg(debug_assertions)]
+use crate::debug_utils::print_power_event_type;
+
 use super::{handler_data::HandlerData, WindowsService};
-use crate::{debug_utils::print_power_event_type, proxy::Proxy};
+use crate::proxy::Proxy;
 use autopower_shared::{
     logging::Logger,
     proxy_command::{PowerConfigSelection, ProxyCommand},
