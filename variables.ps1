@@ -10,6 +10,7 @@ function Assert-Admin($script_definition) {
 
     if (-not $IsAdmin) {
         Write-Output "Starting a new shell as admin..."
+        Write-Output "Sometimes this window will stay open even after install is finished."
         Start-Process "powershell" -Wait -Verb RunAs -ArgumentList ('-ExecutionPolicy Bypass -noprofile -file "{0}" -elevated' -f ($script_definition))
         exit
     }
