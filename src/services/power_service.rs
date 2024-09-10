@@ -234,11 +234,7 @@ impl WindowsService for PowerService {
         });
 
         LOGGER.debug("Setting service status to running...");
-        if let Err(e) = me.set_service_status(
-            SERVICE_RUNNING,
-            None,
-            Some(SERVICE_ACCEPT_STOP | SERVICE_ACCEPT_POWEREVENT),
-        ) {
+        if let Err(e) = me.set_service_status(SERVICE_RUNNING, None, Some(SERVICE_ACCEPT_STOP)) {
             LOGGER.error(format!("Could not set service status!\n{}", e));
         }
 
