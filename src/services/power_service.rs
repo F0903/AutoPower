@@ -1,5 +1,5 @@
 use super::WindowsService;
-use crate::{handler_data::HandlerData, proxy::Proxy};
+use crate::{debug_utils::print_power_event_type, handler_data::HandlerData, proxy::Proxy};
 use autopower_shared::{
     logging::Logger,
     proxy_command::{PowerConfigSelection, ProxyCommand},
@@ -25,7 +25,7 @@ use windows::{
             SystemServices::GUID_ACDC_POWER_SOURCE,
             Threading::{CreateEventW, SetEvent, WaitForSingleObject, INFINITE},
         },
-        UI::WindowsAndMessaging::{self, PBT_APMPOWERSTATUSCHANGE, PBT_POWERSETTINGCHANGE},
+        UI::WindowsAndMessaging::{self, PBT_POWERSETTINGCHANGE},
     },
 };
 
@@ -99,15 +99,13 @@ impl PowerService {
             event_data,
         } = data;
 
-        //temp debug
-        if event_type == PBT_APMPOWERSTATUSCHANGE {
-            LOGGER.debug("Power event was PBT_APMPOWERSTATUSCHANGE");
-        }
-
         if event_type != PBT_POWERSETTINGCHANGE {
             LOGGER.debug("Power event was not PBT_POWERSETTINGCHANGE");
             return;
         }
+
+        #[cfg(debug_assertions)]
+        print_power_event_type(event_type, &LOGGER);
 
         let pbs = event_data as *mut POWERBROADCAST_SETTING;
         unsafe {

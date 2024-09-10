@@ -12,6 +12,7 @@ use serde::{Deserialize, Serialize};
 use std::{
     fs::File,
     io::{BufReader, BufWriter, Write},
+    path::{Path, PathBuf},
 };
 
 const LOGGER: Logger = Logger::new("power_config", "autopower_proxy");
@@ -44,15 +45,16 @@ impl Default for PowerConfig {
 }
 
 impl PowerConfig {
-    fn get(path: &str) -> Result<Self, ConfigError> {
-        LOGGER.debug("Reading power config...");
+    fn get(path: &Path) -> Result<Self, ConfigError> {
+        LOGGER.debug(format!("Reading power config at {}", path.display()));
+
         let fs = File::open(path).map_err(|_| ConfigError::CouldNotLoadOrCreate)?;
         let buf = BufReader::new(fs);
         serde_json::from_reader(buf).map_err(|_| ConfigError::CouldNotLoadOrCreate)
     }
 
-    fn new(path: &str) -> Result<Self, ConfigError> {
-        LOGGER.debug("Writing new power config...");
+    fn new(path: &Path) -> Result<Self, ConfigError> {
+        LOGGER.debug(format!("Writing new power config at {}", path.display()));
         let new_config = PowerConfig::default();
         let fs = File::create(path).map_err(|_| ConfigError::CouldNotLoadOrCreate)?;
         let mut buf = BufWriter::new(fs);
@@ -64,7 +66,10 @@ impl PowerConfig {
 
     pub fn get_or_create() -> Result<Self, ConfigError> {
         const CONFIG_PATH: &str = "./config.json";
-        Self::get(CONFIG_PATH).or_else(|_| Self::new(CONFIG_PATH))
+        let path = PathBuf::from(CONFIG_PATH)
+            .canonicalize()
+            .map_err(|_| ConfigError::CouldNotLoadOrCreate)?;
+        Self::get(&path).or_else(|_| Self::new(&path))
     }
 
     pub fn get_wired_config(&self) -> &StateConfig {
