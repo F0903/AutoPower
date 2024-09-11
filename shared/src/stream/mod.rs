@@ -11,17 +11,17 @@ use windows::Win32::{
 
 use crate::Result;
 
-pub trait FileStream {
+pub trait FileStreamMode {
     fn as_generic_access_rights() -> u32;
     fn as_pipe_access_rights() -> FILE_FLAGS_AND_ATTRIBUTES;
 }
 
-pub struct HandleStream<M: FileStream> {
+pub struct FileStream<M: FileStreamMode> {
     handle: HANDLE,
     mode: std::marker::PhantomData<M>,
 }
 
-impl<M: FileStream> HandleStream<M> {
+impl<M: FileStreamMode> FileStream<M> {
     pub fn get_raw_handle(&self) -> HANDLE {
         self.handle
     }
@@ -39,7 +39,7 @@ impl<M: FileStream> HandleStream<M> {
     }
 }
 
-impl<M: FileStream> Drop for HandleStream<M> {
+impl<M: FileStreamMode> Drop for FileStream<M> {
     fn drop(&mut self) {
         self.close().unwrap();
     }

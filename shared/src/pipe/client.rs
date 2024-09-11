@@ -1,6 +1,6 @@
 use super::{Pipe, Result, LOGGER, PIPE_PATH_ROOT};
 use crate::{
-    stream::{FileStream, HandleStream},
+    stream::{FileStreamMode, FileStream},
     util::get_last_win32_err,
     winstr::Win32String,
 };
@@ -17,7 +17,7 @@ const RETRYING_ATTEMPTS: u32 = 15;
 
 pub struct Client;
 
-impl<S: FileStream> Pipe<Client, S> {
+impl<S: FileStreamMode> Pipe<Client, S> {
     pub fn create_client_retrying(name: &str) -> Result<Self> {
         let mut first_error = None;
         for _ in 0..RETRYING_ATTEMPTS {
@@ -65,7 +65,7 @@ impl<S: FileStream> Pipe<Client, S> {
         unsafe { SetNamedPipeHandleState(pipe, Some(&PIPE_READMODE_MESSAGE), None, None)? };
 
         Ok(Self {
-            stream: HandleStream::create(pipe),
+            stream: FileStream::create(pipe),
             mode: std::marker::PhantomData,
         })
     }

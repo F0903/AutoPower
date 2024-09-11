@@ -1,6 +1,6 @@
 use crate::logging::Logger;
 
-use super::{FileStream, HandleStream};
+use super::{FileStream, FileStreamMode};
 use windows::Win32::{
     Foundation::GENERIC_READ,
     Storage::FileSystem::{ReadFile, PIPE_ACCESS_INBOUND},
@@ -9,7 +9,7 @@ use windows::Win32::{
 static LOGGER: Logger = Logger::new("stream_reader", "autopower_shared");
 
 pub struct Read;
-impl FileStream for Read {
+impl FileStreamMode for Read {
     fn as_generic_access_rights() -> u32 {
         GENERIC_READ.0
     }
@@ -19,9 +19,9 @@ impl FileStream for Read {
     }
 }
 
-impl HandleStream<Read> {}
+impl FileStream<Read> {}
 
-impl std::io::Read for HandleStream<Read> {
+impl std::io::Read for FileStream<Read> {
     fn read(&mut self, buf: &mut [u8]) -> std::io::Result<usize> {
         let mut bytes_read = 0;
         LOGGER.debug("Reading from file handle... (blocking)");

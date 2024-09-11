@@ -1,6 +1,6 @@
 use super::{Pipe, Result, PIPE_BUFFER_SIZE, PIPE_PATH_ROOT};
 use crate::{
-    stream::{FileStream, HandleStream},
+    stream::{FileStreamMode, FileStream},
     util::get_last_win32_err,
     winstr::Win32String,
 };
@@ -18,7 +18,7 @@ use windows::Win32::{
 
 pub struct Server;
 
-impl<S: FileStream> Pipe<Server, S> {
+impl<S: FileStreamMode> Pipe<Server, S> {
     fn get_security_descriptor() -> Result<SECURITY_DESCRIPTOR> {
         let mut security_desc = SECURITY_DESCRIPTOR::default();
         let p_security_desc =
@@ -59,7 +59,7 @@ impl<S: FileStream> Pipe<Server, S> {
         }
 
         Ok(Self {
-            stream: HandleStream::create(pipe),
+            stream: FileStream::create(pipe),
             mode: std::marker::PhantomData,
         })
     }
