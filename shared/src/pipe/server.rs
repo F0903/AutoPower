@@ -1,8 +1,8 @@
 use super::{Pipe, Result, PIPE_BUFFER_SIZE, PIPE_PATH_ROOT};
 use crate::{
-    stream::{HandleStream, HandleStreamMode},
+    stream::{FileStream, HandleStream},
     util::get_last_win32_err,
-    winstr::to_win32_wstr,
+    winstr::Win32String,
 };
 use windows::Win32::{
     Security::{
@@ -18,7 +18,7 @@ use windows::Win32::{
 
 pub struct Server;
 
-impl<S: HandleStreamMode> Pipe<Server, S> {
+impl<S: FileStream> Pipe<Server, S> {
     fn get_security_descriptor() -> Result<SECURITY_DESCRIPTOR> {
         let mut security_desc = SECURITY_DESCRIPTOR::default();
         let p_security_desc =
@@ -40,7 +40,7 @@ impl<S: HandleStreamMode> Pipe<Server, S> {
             lpSecurityDescriptor: (&mut security_desc as *mut SECURITY_DESCRIPTOR).cast(),
         };
 
-        let pipe_name = to_win32_wstr(&format!("{}{}", PIPE_PATH_ROOT, name));
+        let pipe_name = Win32String::from_str(&format!("{}{}", PIPE_PATH_ROOT, name));
         let pipe = unsafe {
             CreateNamedPipeW(
                 pipe_name.get_const(),

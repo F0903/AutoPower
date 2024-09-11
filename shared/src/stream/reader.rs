@@ -1,6 +1,6 @@
 use crate::logging::Logger;
 
-use super::{HandleStream, HandleStreamMode};
+use super::{FileStream, HandleStream};
 use windows::Win32::{
     Foundation::GENERIC_READ,
     Storage::FileSystem::{ReadFile, PIPE_ACCESS_INBOUND},
@@ -9,7 +9,7 @@ use windows::Win32::{
 static LOGGER: Logger = Logger::new("stream_reader", "autopower_shared");
 
 pub struct Read;
-impl HandleStreamMode for Read {
+impl FileStream for Read {
     fn as_generic_access_rights() -> u32 {
         GENERIC_READ.0
     }

@@ -3,7 +3,7 @@ mod power_service;
 
 pub use power_service::PowerService;
 
-use autopower_shared::{logging::Logger, winstr::to_win32_wstr};
+use autopower_shared::{logging::Logger, winstr::Win32String};
 use windows::{
     core::PWSTR,
     Win32::System::Services::{StartServiceCtrlDispatcherW, SERVICE_TABLE_ENTRYW},
@@ -24,7 +24,7 @@ pub fn start<S: WindowsService>() -> Result<()> {
     }));
 
     LOGGER.debug("Starting setup...");
-    let mut service_name = to_win32_wstr(S::get_name());
+    let mut service_name = Win32String::from_str(S::get_name());
     LOGGER.debug(format!("Service name is: {}", unsafe {
         service_name.get_const().display()
     }));

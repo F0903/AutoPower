@@ -6,7 +6,7 @@ use crate::proxy::Proxy;
 use autopower_shared::{
     logging::Logger,
     proxy_command::{PowerConfigSelection, ProxyCommand},
-    winstr::to_win32_wstr,
+    winstr::Win32String,
 };
 use std::{ffi::c_void, mem::ManuallyDrop};
 use windows::{
@@ -195,7 +195,7 @@ impl WindowsService for PowerService {
         Logger::set_panic_hook(&LOGGER);
 
         let me: &'static mut Self = Box::leak(Box::new(Self::new()));
-        let service_name = to_win32_wstr(SERVICE_NAME);
+        let service_name = Win32String::from_str(SERVICE_NAME);
         me.status_handle = Some(
             match RegisterServiceCtrlHandlerExW(
                 service_name.get_const(),

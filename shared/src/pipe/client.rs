@@ -1,8 +1,8 @@
 use super::{Pipe, Result, LOGGER, PIPE_PATH_ROOT};
 use crate::{
-    stream::{HandleStream, HandleStreamMode},
+    stream::{FileStream, HandleStream},
     util::get_last_win32_err,
-    winstr::to_win32_wstr,
+    winstr::Win32String,
 };
 use windows::Win32::{
     Storage::FileSystem::{
@@ -17,7 +17,7 @@ const RETRYING_ATTEMPTS: u32 = 15;
 
 pub struct Client;
 
-impl<S: HandleStreamMode> Pipe<Client, S> {
+impl<S: FileStream> Pipe<Client, S> {
     pub fn create_client_retrying(name: &str) -> Result<Self> {
         let mut first_error = None;
         for _ in 0..RETRYING_ATTEMPTS {
@@ -40,7 +40,7 @@ impl<S: HandleStreamMode> Pipe<Client, S> {
     }
 
     pub fn create_client(name: &str) -> Result<Self> {
-        let pipe_name = to_win32_wstr(&format!("{}{}", PIPE_PATH_ROOT, name));
+        let pipe_name = Win32String::from_str(&format!("{}{}", PIPE_PATH_ROOT, name));
         let access_rights = S::as_generic_access_rights();
         LOGGER.debug(format!(
             "Got following access rights for client pipe: {}",

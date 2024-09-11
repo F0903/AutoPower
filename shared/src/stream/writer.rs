@@ -1,11 +1,11 @@
-use super::{HandleStream, HandleStreamMode};
+use super::{HandleStream, FileStream};
 use windows::Win32::{
     Foundation::GENERIC_WRITE,
     Storage::FileSystem::{WriteFile, PIPE_ACCESS_OUTBOUND},
 };
 
 pub struct Write;
-impl HandleStreamMode for Write {
+impl FileStream for Write {
     fn as_generic_access_rights() -> u32 {
         GENERIC_WRITE.0
     }
