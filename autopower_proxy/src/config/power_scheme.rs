@@ -8,7 +8,7 @@ use windows::Win32::System::SystemServices::{
 pub enum PowerScheme {
     HighPerformance,
     Balanced,
-    PowerSavings,
+    PowerSaver,
     Custom(String),
 }
 
@@ -17,7 +17,7 @@ impl PowerScheme {
         match self {
             Self::HighPerformance => GUID_MIN_POWER_SAVINGS,
             Self::Balanced => GUID_TYPICAL_POWER_SAVINGS,
-            Self::PowerSavings => GUID_MAX_POWER_SAVINGS,
+            Self::PowerSaver => GUID_MAX_POWER_SAVINGS,
             Self::Custom(val) => GUID::from(val.as_str()),
         }
     }
