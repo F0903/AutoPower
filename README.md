@@ -36,7 +36,9 @@ In `config.json`, you can configure the `power_scheme` field in either `wired_co
 ```json
 "power_scheme": "Balanced",
 ```
-#### Power Saver [(cannot be used with modern standby)](https://learn.microsoft.com/en-us/windows/win32/power/power-policy-settings)
+[_Note: only Balanced works with modern standby._](https://learn.microsoft.com/en-us/windows/win32/power/power-policy-settings)
+
+#### Power Saver
 ```json
 "power_scheme": "PowerSaver",
 ```
