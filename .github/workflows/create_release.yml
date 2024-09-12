@@ -34,3 +34,4 @@ jobs:
         tag_name: ${{ steps.Version.outputs.version }}
         files: "release.zip"
         draft: true
+        generate_release_notes: true
