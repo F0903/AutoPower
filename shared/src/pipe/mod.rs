@@ -7,7 +7,7 @@ pub use server::Server;
 
 use crate::{
     logging::Logger,
-    stream::{HandleStream, HandleStreamMode},
+    stream::{FileStream, FileStreamMode},
 };
 use std::{
     fmt::Debug,
@@ -22,8 +22,8 @@ pub const PIPE_NAME: &str = "AutoPowerProxy";
 
 static LOGGER: Logger = Logger::new("pipe", "autopower_shared");
 
-pub struct Pipe<M, S: HandleStreamMode> {
-    stream: HandleStream<S>,
+pub struct Pipe<M, S: FileStreamMode> {
+    stream: FileStream<S>,
     mode: std::marker::PhantomData<M>,
 }
 
@@ -63,8 +63,8 @@ impl<M> std::io::Write for Pipe<M, stream::Write> {
     }
 }
 
-impl<M, S: HandleStreamMode> Pipe<M, S> {
-    pub fn get_stream(&self) -> &HandleStream<S> {
+impl<M, S: FileStreamMode> Pipe<M, S> {
+    pub fn get_stream(&self) -> &FileStream<S> {
         &self.stream
     }
 
@@ -74,7 +74,7 @@ impl<M, S: HandleStreamMode> Pipe<M, S> {
     }
 }
 
-impl<M, S: HandleStreamMode> Drop for Pipe<M, S> {
+impl<M, S: FileStreamMode> Drop for Pipe<M, S> {
     fn drop(&mut self) {
         LOGGER.debug("Dropping pipe...");
         self.close().unwrap();

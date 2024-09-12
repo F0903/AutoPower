@@ -1,4 +1,4 @@
-use std::{ffi::OsStr, path::PathBuf};
+use std::{ffi::OsString, os::windows::ffi::OsStringExt, path::PathBuf};
 
 use windows::{
     core::PWSTR,
@@ -6,7 +6,7 @@ use windows::{
         Foundation::GetLastError,
         System::{
             Diagnostics::Debug::{FormatMessageW, FORMAT_MESSAGE_FROM_SYSTEM},
-            LibraryLoader::GetModuleFileNameA,
+            LibraryLoader::GetModuleFileNameW,
         },
     },
 };
@@ -33,17 +33,17 @@ pub fn get_last_win32_err() -> super::Result<String> {
 pub fn get_process_exe_path() -> super::Result<PathBuf> {
     let mut buf = [0; 512];
     unsafe {
-        let count = GetModuleFileNameA(None, &mut buf);
+        let count = GetModuleFileNameW(None, &mut buf);
         let count_usize = count as usize;
         if count_usize == buf.len() {
             return Err("Process path is too long!".into());
         }
-        if buf[count_usize] != b'\0' {
+        if buf[count_usize] != 0 {
             return Err(
                 "Process path buffer did not end with a null terminator, possible overflow.".into(),
             );
         }
-        let os_str = OsStr::from_encoded_bytes_unchecked(&buf[0..(count_usize)]);
+        let os_str = OsString::from_wide(&buf[0..(count_usize)]);
         Ok(PathBuf::from(os_str))
     }
 }
