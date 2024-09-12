@@ -24,7 +24,7 @@ jobs:
     - name: Build
       run: cargo build --verbose --release --workspace
     - name: Version
-      run: echo "::set-output name=version::$(.\target\release\autopower.exe version)"
+      run: echo "version=$(.\target\release\autopower.exe version)" >> $GITHUB_OUTPUT
       id: version
     - name: Zip files
       run: Get-ChildItem .\target\release\* -Include "*.exe","*.ps1" | Compress-Archive -DestinationPath ".\release.zip"
