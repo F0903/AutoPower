@@ -4,7 +4,7 @@ version = 3
 
 [[package]]
 name = "autopower"
-version = "3.0.0"
+version = "3.0.1"
 dependencies = [
  "autopower_shared",
  "bincode",
@@ -14,7 +14,7 @@ dependencies = [
 
 [[package]]
 name = "autopower_proxy"
-version = "3.0.0"
+version = "3.0.1"
 dependencies = [
  "autopower_shared",
  "bincode",
@@ -25,7 +25,7 @@ dependencies = [
 
 [[package]]
 name = "autopower_shared"
-version = "3.0.0"
+version = "3.0.1"
 dependencies = [
  "bincode",
  "once_cell",
